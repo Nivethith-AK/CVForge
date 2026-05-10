@@ -369,14 +369,11 @@ ${text}
 
       // Set worker src for Node.js
       if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        try {
-          // Use a more robust path resolution for Vercel
-          const workerPath = path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.js');
-          pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
-          console.log('Worker path set to:', workerPath);
-        } catch (e) {
-          console.error('Failed to set worker path:', e);
-        }
+        // Use CDN for the worker - this is the most reliable way on Vercel
+        // @ts-ignore
+        const version = pdfjsLib.version || '3.11.174';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.js`;
+        console.log('Worker path set to CDN:', pdfjsLib.GlobalWorkerOptions.workerSrc);
       }
 
       const data = new Uint8Array(req.file.buffer);
@@ -412,7 +409,12 @@ ${text}
       res.json({ text: fullText });
     } catch (error: any) {
       console.error('Error parsing PDF:', error);
-      res.status(500).json({ error: `Failed to process the PDF document: ${error.message}` });
+      // Return the specific error message to the client for easier debugging
+      res.status(500).json({ 
+        error: 'Failed to parse the PDF document.',
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   });
 
