@@ -206,6 +206,9 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
     const bulletIndent = 14;
     const headerTitleSize = 20;
     const headerBodySize = 10;
+    const footerReserve = 56;
+    const headerBottomSpacing = 20;
+    const exportTimestamp = new Date().toLocaleDateString();
 
     let cursorY = margin;
     let hasSeenFirstSection = false;
@@ -223,18 +226,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       pdf.text(`Page ${pageNumber}`, pageWidth - margin, footerY, { align: 'right' });
     };
 
-    const ensureSpace = (heightNeeded: number) => {
-      if (cursorY + heightNeeded > pageHeight - margin) {
-        addFooter();
-        pdf.addPage();
-        pageNumber += 1;
-        cursorY = margin;
-      }
-    };
-
     const addHeader = () => {
-      const timestamp = new Date().toLocaleDateString();
-
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(headerTitleSize);
       pdf.setTextColor(15, 23, 42);
@@ -245,13 +237,23 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       pdf.setFontSize(headerBodySize);
       pdf.setTextColor(71, 85, 105);
       pdf.text('Generated from the current editable draft', margin, cursorY);
-      pdf.text(timestamp, pageWidth - margin, cursorY, { align: 'right' });
+      pdf.text(exportTimestamp, pageWidth - margin, cursorY, { align: 'right' });
 
       cursorY += 18;
       pdf.setDrawColor(203, 213, 225);
       pdf.setLineWidth(1);
       pdf.line(margin, cursorY, pageWidth - margin, cursorY);
-      cursorY += 20;
+      cursorY += headerBottomSpacing;
+    };
+
+    const ensureSpace = (heightNeeded: number) => {
+      if (cursorY + heightNeeded > pageHeight - margin - footerReserve) {
+        addFooter();
+        pdf.addPage();
+        pageNumber += 1;
+        cursorY = margin;
+        addHeader();
+      }
     };
 
     const drawSectionDivider = () => {
@@ -264,19 +266,6 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
 
     const isContactLine = (line: string) =>
       line.includes('|') || line.includes('@') || /^\+?[\d\s()-]+$/.test(line);
-
-    const drawWrappedText = (text: string, options?: { bold?: boolean; size?: number; color?: [number, number, number]; indent?: number }) => {
-      const size = options?.size ?? 11;
-      const indent = options?.indent ?? 0;
-      pdf.setFont('helvetica', options?.bold ? 'bold' : 'normal');
-      pdf.setFontSize(size);
-      pdf.setTextColor(...(options?.color ?? [30, 41, 59]));
-
-      const wrappedLines = pdf.splitTextToSize(text, contentWidth - indent);
-      ensureSpace(wrappedLines.length * lineHeight);
-      pdf.text(wrappedLines, margin + indent, cursorY);
-      cursorY += wrappedLines.length * lineHeight;
-    };
 
     const drawParagraph = (text: string, options?: { bold?: boolean; size?: number; color?: [number, number, number]; indent?: number; gapAfter?: number }) => {
       const size = options?.size ?? 11;
