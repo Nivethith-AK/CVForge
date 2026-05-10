@@ -189,7 +189,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-          <span>AI Engine: Gemini Pro 3.1</span>
+          <span>AI Engine: Gemini Pro 3.1 | Developed by Nivethith AK</span>
         </div>
       </footer>
 
