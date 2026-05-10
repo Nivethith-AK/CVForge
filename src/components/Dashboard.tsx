@@ -240,7 +240,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       }
 
       if (line.includes('|') || line.includes('@') || line.match(/^\+?[\d\s()-]+$/)) {
-        drawWrappedText(line, { size: 10, color: [71, 85, 105] });
+        drawWrappedText(line, { size: 08, color: [71, 85, 105] });
         return;
       }
 
