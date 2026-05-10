@@ -7,7 +7,7 @@
 [![React Version](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6.svg)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4.0-38bdf8.svg)](https://tailwindcss.com/)
-[![Gemini AI](https://img.shields.io/badge/AI-Gemini_2.0-purple.svg)](https://ai.google.dev/)
+[![Gemini AI](https://img.shields.io/badge/AI-Gemini_3.1-purple.svg)](https://ai.google.dev/)
 [![Vercel Deployment](https://img.shields.io/badge/Deployed-Vercel-000000.svg)](https://vercel.com/)
 
 **Stop guessing, start tailoring.** CVForge is a production-grade Resume Analyzer platform that uses Google Gemini AI to provide real-time ATS scoring, skill gap analysis, and AI-generated tailored resume drafts. 
