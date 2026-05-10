@@ -12,7 +12,36 @@ const ScrollArea = React.forwardRef<
     className={cn("relative overflow-hidden", className)}
     {...props}
   >
-    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] outline-none">
+    {/* Inline CSS ensures a consistent modern scrollbar across browsers */}
+    <style>{`
+      .cvf-scroll-viewport {
+        scrollbar-width: thin; /* Firefox */
+        scrollbar-color: rgba(99,102,241,0.9) rgba(15,23,42,0.06);
+      }
+
+      .cvf-scroll-viewport::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+
+      .cvf-scroll-viewport::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 8px 0;
+        border-radius: 9999px;
+      }
+
+      .cvf-scroll-viewport::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(99,102,241,0.95), rgba(56,189,248,0.9));
+        border-radius: 9999px;
+        border: 2px solid rgba(15,23,42,0.06);
+      }
+
+      .cvf-scroll-viewport::-webkit-scrollbar-thumb:hover {
+        filter: brightness(0.9);
+      }
+    `}</style>
+
+    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] outline-none cvf-scroll-viewport">
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />
