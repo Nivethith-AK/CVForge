@@ -183,8 +183,9 @@ export default function App() {
           <button onClick={() => setOpenModal('api')} className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">API Documentation</button>
         </div>
         <div className="flex items-center gap-4">
-          <a href="https://github.com/YOUR_GITHUB" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors">GitHub</a>
-          <a href="https://instagram.com/YOUR_INSTAGRAM" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors">Instagram</a>
+          <a href="https://github.com/Nivethith-AK" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors">GitHub</a>
+          <a href="https://www.linkedin.com/in/nivethith-ak/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors">LinkedIn</a>
+          <a href="https://www.instagram.com/nivethith_01/" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors">Instagram</a>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
