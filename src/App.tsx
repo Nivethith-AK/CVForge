@@ -112,6 +112,22 @@ export default function App() {
         throw new Error('No readable text found in the PDF.');
       }
 
+        // Lightweight resume heuristic: require resume-like keywords
+        const looksLikeResume = (txt: string) => {
+          if (!txt) return false;
+          const lower = txt.toLowerCase();
+          const keywords = ['education', 'experience', 'skills', 'summary', 'professional', 'work', 'employment', 'objective', 'contact', 'curriculum vitae', 'resume'];
+          let found = 0;
+          for (const kw of keywords) {
+            if (lower.includes(kw)) found += 1;
+          }
+          return found >= 2 || lower.includes('curriculum vitae') || lower.includes('resume');
+        };
+
+        if (!looksLikeResume(text)) {
+          throw new Error('Please upload a correct resume or CV PDF file.');
+        }
+
       // 2. Send text to Gemini API with streaming progress
       const result = await analyzeResumeStream(text, (progress) => {
         setUploadProgress(50 + (progress * 0.5));
