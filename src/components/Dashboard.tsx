@@ -172,14 +172,6 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
     >
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 px-2 gap-4">
         <div>
-          <motion.div 
-            initial={{opacity:0, y:-10}} 
-            animate={{opacity:1,y:0}} 
-            transition={{ delay: 0.2 }}
-            className="flex items-center gap-2 mb-3 text-cyan-600 dark:text-cyan-400 font-bold tracking-widest text-xs uppercase"
-          >
-            <Sparkles className="w-4 h-4" /> Analysis Complete
-          </motion.div>
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
             Resume Intelligence
           </h2>
