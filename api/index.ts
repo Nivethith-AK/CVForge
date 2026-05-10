@@ -2,7 +2,6 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import multer from 'multer';
-import { PDFParse } from 'pdf-parse';
 
 const app = express();
 app.use(express.json());
@@ -10,13 +9,19 @@ app.use(express.json());
 // Register process-level error handlers once per runtime.
 const globalFlag = globalThis as typeof globalThis & { __cvforgeHandlersRegistered?: boolean };
 if (!globalFlag.__cvforgeHandlersRegistered) {
-  process.on('uncaughtException', (error) => {
-    console.error('Uncaught exception in API runtime:', error);
-  });
+  try {
+    if (typeof process !== 'undefined' && typeof process.on === 'function') {
+      process.on('uncaughtException', (error) => {
+        console.error('Uncaught exception in API runtime:', error);
+      });
 
-  process.on('unhandledRejection', (reason) => {
-    console.error('Unhandled rejection in API runtime:', reason);
-  });
+      process.on('unhandledRejection', (reason) => {
+        console.error('Unhandled rejection in API runtime:', reason);
+      });
+    }
+  } catch (error) {
+    console.error('Failed to register process-level handlers:', error);
+  }
 
   globalFlag.__cvforgeHandlersRegistered = true;
 }
@@ -115,10 +120,25 @@ function extractJsonObject(text: string) {
 // PDF Extraction Logic using pdf-parse (as requested)
 export async function extractTextFromPDF(buffer: Buffer) {
   try {
-    const parser = new PDFParse({ data: buffer });
-    const data = await parser.getText();
-    await parser.destroy();
-    return data.text;
+    const module = await import('pdf-parse');
+    const PDFParseCtor = (module as any).PDFParse;
+
+    if (typeof PDFParseCtor === 'function') {
+      const parser = new PDFParseCtor({ data: buffer });
+      const data = await parser.getText();
+      if (typeof parser.destroy === 'function') {
+        await parser.destroy();
+      }
+      return data.text;
+    }
+
+    const fallback = (module as any).default;
+    if (typeof fallback === 'function') {
+      const data = await fallback(buffer);
+      return data?.text || '';
+    }
+
+    throw new Error('Unsupported pdf-parse module shape');
   } catch (err: any) {
     throw new Error(`pdf-parse failed: ${err.message}`);
   }
