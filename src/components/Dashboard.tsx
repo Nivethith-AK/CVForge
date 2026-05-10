@@ -320,7 +320,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
                 ></motion.circle>
               </svg>
               <div className="absolute flex flex-col items-center justify-center">
-                <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 tracking-tighter">
+                <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 tracking-tighter">
                   {validatedAnalysis.atsScore}%
                 </div>
               </div>
