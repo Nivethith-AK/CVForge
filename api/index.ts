@@ -383,6 +383,22 @@ app.post('/api/parse-pdf', upload.fields([{ name: 'file', maxCount: 1 }, { name:
       return res.status(400).json({ error: 'Extracted text is empty. The PDF might be an image or protected.' });
     }
 
+    // Server-side lightweight resume validation: require several resume-like keywords
+    const looksLikeResumeServer = (txt: string) => {
+      if (!txt) return false;
+      const lower = txt.toLowerCase();
+      const keywords = ['education', 'experience', 'skills', 'summary', 'professional', 'work', 'employment', 'objective', 'contact', 'curriculum vitae', 'resume'];
+      let found = 0;
+      for (const kw of keywords) {
+        if (lower.includes(kw)) found += 1;
+      }
+      return found >= 3 || lower.includes('curriculum vitae') || lower.includes('resume');
+    };
+
+    if (!looksLikeResumeServer(text)) {
+      return res.status(400).json({ error: 'Please upload a correct resume or CV PDF file.' });
+    }
+
     return res.json({ text });
   } catch (err: any) {
     console.error('PDF Parse Error:', err);
