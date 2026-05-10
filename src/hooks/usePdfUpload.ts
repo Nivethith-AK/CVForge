@@ -71,8 +71,8 @@ function looksLikeResume(text: string): boolean {
     if (lower.includes(kw)) found += 1;
   }
 
-  // require at least two resume-like keywords to consider it a resume
-  return found >= 2 || lower.includes('curriculum vitae') || lower.includes('resume');
+  // require at least three resume-like keywords to reduce false positives
+  return found >= 3 || lower.includes('curriculum vitae') || lower.includes('resume');
 }
 
 function getDropzoneError(rejections: FileRejection[]): string {
@@ -177,7 +177,7 @@ export function usePdfUpload() {
           ...prev,
           preparedUpload: null,
           isPreparing: false,
-          uploadError: 'Unable to read PDF contents. Please upload a valid resume PDF file.',
+          uploadError: 'Please upload a correct resume or CV PDF file.',
         }));
         return;
       }
@@ -187,7 +187,7 @@ export function usePdfUpload() {
           ...prev,
           preparedUpload: null,
           isPreparing: false,
-          uploadError: 'Please upload a resume PDF file.',
+          uploadError: 'Please upload a correct resume or CV PDF file.',
         }));
         return;
       }

@@ -121,7 +121,7 @@ export default function App() {
           for (const kw of keywords) {
             if (lower.includes(kw)) found += 1;
           }
-          return found >= 2 || lower.includes('curriculum vitae') || lower.includes('resume');
+          return found >= 3 || lower.includes('curriculum vitae') || lower.includes('resume');
         };
 
         if (!looksLikeResume(text)) {
