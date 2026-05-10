@@ -240,11 +240,11 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       }
 
       if (line.includes('|') || line.includes('@') || line.match(/^\+?[\d\s()-]+$/)) {
-        drawWrappedText(line, { size: 05, color: [71, 85, 105] });
+        drawWrappedText(line, { size: 06, color: [71, 85, 105] });
         return;
       }
 
-      drawWrappedText(line, { size: 11, color: [30, 41, 59] });
+      drawWrappedText(line, { size: 06, color: [30, 41, 59] });
     });
 
     const pdfBlob = pdf.output('blob');
