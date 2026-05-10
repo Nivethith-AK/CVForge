@@ -19,6 +19,9 @@ import type { PreparedPdfUpload } from './hooks/usePdfUpload';
 async function extractTextLocallyFromPdf(file: File): Promise<string> {
   const pdfjsEntry: string = 'pdfjs-dist/legacy/build/pdf.mjs';
   const pdfjs = await import(pdfjsEntry);
+  if (pdfjs?.GlobalWorkerOptions) {
+    pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url).toString();
+  }
   const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   const doc = await loadingTask.promise;
 
