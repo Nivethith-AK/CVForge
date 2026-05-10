@@ -89,7 +89,7 @@ Receive a reformatted, ATS-optimized resume draft powered by Gemini:
 └────────────────────┬────────────────────────────────────────┘
                      │ HTTPS/gRPC
 ┌────────────────────▼────────────────────────────────────────┐
-│         Google Gemini 2.0 (via OpenRouter)                  │
+│         Google Gemini 3.1 (via OpenRouter)                  │
 │  Multi-stage semantic analysis with chain-of-thought       │
 └─────────────────────────────────────────────────────────────┘
 ```
