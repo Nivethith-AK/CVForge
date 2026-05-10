@@ -2,25 +2,12 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import multer from 'multer';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
-
-// Essential polyfills for PDF.js in Node.js
-if (typeof global !== 'undefined' && !(global as any).DOMMatrix) {
-  (global as any).DOMMatrix = class DOMMatrix {
-    a=1; b=0; c=0; d=1; e=0; f=0;
-    constructor() {}
-    static fromFloat32Array() { return new DOMMatrix(); }
-    static fromFloat64Array() { return new DOMMatrix(); }
-  };
-}
-if (typeof global !== 'undefined' && !(global as any).Image) {
-  (global as any).Image = class Image {};
-}
+import pdf from 'pdf-parse';
 
 const app = express();
 app.use(express.json());
 
-// Setup Multer (using memoryStorage as requested)
+// Setup Multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -78,33 +65,17 @@ function extractJsonObject(text: string) {
   return JSON.parse(text.slice(startIndex, endIndex + 1));
 }
 
-// PDF Extraction Logic (User's suggested approach, adapted for Express)
-export async function extractTextFromPDF(buffer: ArrayBuffer) {
-  // DO NOT set workerSrc to a URL in Node.js - it will fail with 'Cannot find module'
-  
-  const pdf = await pdfjsLib.getDocument({ 
-    data: new Uint8Array(buffer),
-    disableWorker: true, // Forces parsing on the main thread (essential for Vercel)
-    verbosity: 0,
-    useSystemFonts: true,
-    disableFontFace: true
-  }).promise;
-
-  let text = "";
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const strings = content.items.map((item: any) => item.str || "");
-    text += strings.join(" ") + "\n";
-    await page.cleanup();
+// PDF Extraction Logic using pdf-parse (as requested)
+export async function extractTextFromPDF(buffer: Buffer) {
+  try {
+    const data = await pdf(buffer);
+    return data.text;
+  } catch (err: any) {
+    throw new Error(`pdf-parse failed: ${err.message}`);
   }
-
-  await pdf.destroy();
-  return text;
 }
 
-// User's requested API route (Adapted for Express from Next.js snippet)
+// API Route for PDF parsing
 app.post('/api/parse-pdf', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -116,10 +87,10 @@ app.post('/api/parse-pdf', upload.single('file'), async (req, res) => {
     const buffer = req.file.buffer;
     const text = await extractTextFromPDF(buffer);
 
-    console.log("Extracted text length:", text.length);
+    console.log("Extracted text length:", text?.length || 0);
 
-    if (!text.trim()) {
-      return res.status(400).json({ error: 'Extracted text is empty' });
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Extracted text is empty. The PDF might be an image or protected.' });
     }
 
     return res.json({ text });
@@ -148,7 +119,7 @@ app.post('/api/analyze-resume-stream', async (req, res) => {
     send('progress', { stage: 'analyzing', percent: 20 });
     const payload = await callOpenRouter(apiKey, [
       { role: 'system', content: 'Return valid JSON.' },
-      { role: 'user', content: `Analyze this resume for ATS score: ${text}` }
+      { role: 'user', content: `Analyze this resume: ${text}` }
     ]);
     
     const parsed = extractJsonObject(payload?.choices?.[0]?.message?.content || '{}');
@@ -167,7 +138,7 @@ app.post('/api/analyze-resume-stream', async (req, res) => {
   }
 });
 
-// Vite / Static files
+// Static files in production
 if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(process.cwd(), 'dist');
   app.use(express.static(distPath));
