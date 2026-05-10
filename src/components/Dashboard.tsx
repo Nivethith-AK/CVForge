@@ -203,16 +203,55 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
     const contentWidth = pageWidth - margin * 2;
     const lineHeight = 15;
     const sectionGap = 14;
-    const bulletIndent = 12;
+    const bulletIndent = 14;
+    const headerTitleSize = 20;
+    const headerBodySize = 10;
 
     let cursorY = margin;
     let hasSeenFirstSection = false;
+    let pageNumber = 1;
+
+    const addFooter = () => {
+      const footerY = pageHeight - 28;
+      pdf.setDrawColor(226, 232, 240);
+      pdf.setLineWidth(0.6);
+      pdf.line(margin, footerY - 10, pageWidth - margin, footerY - 10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text('Tailored resume export', margin, footerY);
+      pdf.text(`Page ${pageNumber}`, pageWidth - margin, footerY, { align: 'right' });
+    };
 
     const ensureSpace = (heightNeeded: number) => {
       if (cursorY + heightNeeded > pageHeight - margin) {
+        addFooter();
         pdf.addPage();
+        pageNumber += 1;
         cursorY = margin;
       }
+    };
+
+    const addHeader = () => {
+      const timestamp = new Date().toLocaleDateString();
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(headerTitleSize);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('Tailored Resume', margin, cursorY);
+
+      cursorY += 16;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(headerBodySize);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text('Generated from the current editable draft', margin, cursorY);
+      pdf.text(timestamp, pageWidth - margin, cursorY, { align: 'right' });
+
+      cursorY += 18;
+      pdf.setDrawColor(203, 213, 225);
+      pdf.setLineWidth(1);
+      pdf.line(margin, cursorY, pageWidth - margin, cursorY);
+      cursorY += 20;
     };
 
     const drawSectionDivider = () => {
@@ -239,6 +278,34 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       cursorY += wrappedLines.length * lineHeight;
     };
 
+    const drawParagraph = (text: string, options?: { bold?: boolean; size?: number; color?: [number, number, number]; indent?: number; gapAfter?: number }) => {
+      const size = options?.size ?? 11;
+      const indent = options?.indent ?? 0;
+      const gapAfter = options?.gapAfter ?? 0;
+      const wrappedLines = pdf.splitTextToSize(text, contentWidth - indent);
+      ensureSpace(wrappedLines.length * lineHeight + gapAfter);
+      pdf.setFont('helvetica', options?.bold ? 'bold' : 'normal');
+      pdf.setFontSize(size);
+      pdf.setTextColor(...(options?.color ?? [30, 41, 59]));
+      pdf.text(wrappedLines, margin + indent, cursorY);
+      cursorY += wrappedLines.length * lineHeight + gapAfter;
+    };
+
+    const drawBullet = (text: string) => {
+      const normalizedText = text.replace(/^[-•]\s*/, '');
+      const bulletPrefixWidth = 10;
+      const wrappedLines = pdf.splitTextToSize(normalizedText, contentWidth - bulletIndent - bulletPrefixWidth);
+      ensureSpace(wrappedLines.length * lineHeight);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(11);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text('•', margin + bulletIndent, cursorY);
+      pdf.text(wrappedLines, margin + bulletIndent + bulletPrefixWidth, cursorY);
+      cursorY += wrappedLines.length * lineHeight;
+    };
+
+    addHeader();
+
     const lines = editableResume.split(/\r?\n/);
     let renderedName = false;
 
@@ -251,38 +318,39 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       }
 
       if (!renderedName && !isSectionTitle(line) && !line.startsWith('-') && !line.startsWith('•')) {
-        drawWrappedText(line, { bold: true, size: 18, color: [15, 23, 42] });
-        cursorY += 2;
+        drawParagraph(line, { bold: true, size: 18, color: [15, 23, 42], gapAfter: 2 });
         drawSectionDivider();
         renderedName = true;
         return;
       }
 
       if (!hasSeenFirstSection && isContactLine(line)) {
-        drawWrappedText(line, { size: 10, color: [71, 85, 105] });
+        drawParagraph(line, { size: 10, color: [71, 85, 105] });
         return;
       }
 
       if (isSectionTitle(line)) {
         hasSeenFirstSection = true;
         cursorY += sectionGap;
-        drawWrappedText(line.toUpperCase(), { bold: true, size: 11, color: [15, 118, 110] });
+        drawParagraph(line.toUpperCase(), { bold: true, size: 11, color: [15, 118, 110] });
         drawSectionDivider();
         return;
       }
 
       if (line.startsWith('-') || line.startsWith('•')) {
-        drawWrappedText(`• ${line.replace(/^[-•]\s*/, '')}`, { size: 11, color: [30, 41, 59], indent: bulletIndent });
+        drawBullet(line);
         return;
       }
 
       if (isContactLine(line)) {
-        drawWrappedText(line, { size: 10, color: [71, 85, 105] });
+        drawParagraph(line, { size: 10, color: [71, 85, 105] });
         return;
       }
 
-      drawWrappedText(line, { size: 11, color: [30, 41, 59] });
+      drawParagraph(line, { size: 11, color: [30, 41, 59] });
     });
+
+    addFooter();
 
     const pdfBlob = pdf.output('blob');
     const downloadUrl = URL.createObjectURL(pdfBlob);
