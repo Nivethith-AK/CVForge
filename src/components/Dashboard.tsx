@@ -25,7 +25,14 @@ interface DashboardProps {
 }
 
 export function Dashboard({ analysis, onReset }: DashboardProps) {
-  const [editableResume, setEditableResume] = useState(analysis.tailoredResume);
+  const strengths = Array.isArray(analysis.strengths) ? analysis.strengths : [];
+  const weaknesses = Array.isArray(analysis.weaknesses) ? analysis.weaknesses : [];
+  const missingSkills = Array.isArray(analysis.missingSkills) ? analysis.missingSkills : [];
+  const improvements = Array.isArray(analysis.improvements) ? analysis.improvements : [];
+  const recommendedRoles = Array.isArray(analysis.recommendedRoles) ? analysis.recommendedRoles : [];
+  const tailoredResume = typeof analysis.tailoredResume === 'string' ? analysis.tailoredResume : '';
+
+  const [editableResume, setEditableResume] = useState(tailoredResume);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,9 +49,9 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
   }, [editableResume]);
 
   useEffect(() => {
-    setEditableResume(analysis.tailoredResume);
+    setEditableResume(tailoredResume);
     setCopyMessage(null);
-  }, [analysis.tailoredResume]);
+  }, [tailoredResume]);
 
   const radius = 15.9;
   const circumference = 2 * Math.PI * radius;
@@ -229,12 +236,12 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
           </motion.div>
 
           <Card delay={0.2} icon={FileText} title="Executive Summary" iconColor="from-blue-500 to-cyan-400">
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{analysis.summary}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{analysis.summary || 'No summary was returned for this analysis.'}</p>
           </Card>
 
           <Card delay={0.3} icon={Briefcase} title="Recommended Roles" iconColor="from-purple-500 to-indigo-500">
             <div className="flex flex-wrap gap-2">
-              {analysis.recommendedRoles.map((role, index) => (
+              {recommendedRoles.map((role, index) => (
                 <span
                   key={index}
                   className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest shadow-sm"
@@ -252,7 +259,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
             <Card delay={0.4} icon={CheckCircle} title="Key Strengths" iconColor="from-emerald-400 to-teal-500">
               <ScrollArea className="h-48 pr-4 -mr-4">
                 <ul className="space-y-4">
-                  {analysis.strengths.map((strength, index) => (
+                  {strengths.map((strength, index) => (
                     <li key={index} className="flex items-start gap-3 group/item">
                       <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5 group-hover/item:scale-110 transition-transform">
                         <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
@@ -267,7 +274,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
             <Card delay={0.5} icon={AlertTriangle} title="Improvement Areas" iconColor="from-amber-400 to-orange-500">
               <ScrollArea className="h-48 pr-4 -mr-4">
                 <ul className="space-y-4">
-                  {analysis.weaknesses.map((weakness, index) => (
+                  {weaknesses.map((weakness, index) => (
                     <li key={index} className="flex items-start gap-3 group/item">
                       <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5 group-hover/item:scale-110 transition-transform">
                         <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
@@ -287,7 +294,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {analysis.missingSkills.map((skill, index) => (
+                  {missingSkills.map((skill, index) => (
                     <span key={index} className="px-4 py-2 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
                       {skill}
                     </span>
@@ -311,7 +318,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
               </h2>
               <ScrollArea className="h-64 pr-4 -mr-4">
                 <ul className="space-y-6 pt-2">
-                  {analysis.improvements.map((improvement, index) => (
+                  {improvements.map((improvement, index) => (
                     <li key={index} className="flex items-start gap-4">
                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 text-sm font-black shrink-0 mt-0.5">
                         {index + 1}
