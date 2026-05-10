@@ -4,7 +4,7 @@ import path from 'path';
 import multer from 'multer';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 
-// Polyfills for Node.js environment
+// Essential polyfills for PDF.js in Node.js
 if (typeof global !== 'undefined' && !(global as any).DOMMatrix) {
   (global as any).DOMMatrix = class DOMMatrix {
     a=1; b=0; c=0; d=1; e=0; f=0;
@@ -20,9 +20,11 @@ if (typeof global !== 'undefined' && !(global as any).Image) {
 const app = express();
 app.use(express.json());
 
-// Setup Multer
+// Setup Multer (using memoryStorage as requested)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+const PORT = Number(process.env.PORT || 3001);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -50,7 +52,10 @@ async function callOpenRouter(apiKey: string, messages: any[]) {
       temperature: 0,
     }),
   });
-  if (!response.ok) throw new Error('API request failed');
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error?.message || 'API request failed');
+  }
   return response.json();
 }
 
@@ -61,7 +66,7 @@ function normalizeResumeDraft(draft: string) {
 async function generateTailoredResumeDraft(apiKey: string, text: string, analysis: any) {
   const payload = await callOpenRouter(apiKey, [
     { role: 'system', content: 'You rewrite resumes. Return only plain text.' },
-    { role: 'user', content: `Rewrite this resume: ${text}` }
+    { role: 'user', content: `Rewrite this resume based on analysis: ${text}` }
   ]);
   return payload?.choices?.[0]?.message?.content || 'Draft failed';
 }
@@ -69,61 +74,95 @@ async function generateTailoredResumeDraft(apiKey: string, text: string, analysi
 function extractJsonObject(text: string) {
   const startIndex = text.indexOf('{');
   const endIndex = text.lastIndexOf('}');
-  if (startIndex === -1 || endIndex === -1) throw new Error('No JSON found');
+  if (startIndex === -1 || endIndex === -1) throw new Error('No JSON found in model response');
   return JSON.parse(text.slice(startIndex, endIndex + 1));
 }
 
-// Routes
-app.post('/api/parse-pdf', upload.single('resume'), async (req, res) => {
+// PDF Extraction Logic (User's suggested approach, adapted for Express)
+export async function extractTextFromPDF(buffer: ArrayBuffer) {
+  // Set worker for Node environment
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+  }
+
+  const pdf = await pdfjsLib.getDocument({ 
+    data: new Uint8Array(buffer),
+    disableWorker: true,
+    verbosity: 0 
+  }).promise;
+
+  let text = "";
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const strings = content.items.map((item: any) => item.str || "");
+    text += strings.join(" ") + "\n";
+    await page.cleanup();
+  }
+
+  await pdf.destroy();
+  return text;
+}
+
+// User's requested API route (Adapted for Express from Next.js snippet)
+app.post('/api/parse-pdf', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file' });
-    
-    // PDF.js Text Extraction
-    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const data = new Uint8Array(req.file.buffer);
-    const pdf = await pdfjsLib.getDocument({ data, disableWorker: true, verbosity: 0 }).promise;
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      fullText += content.items.map((item: any) => item.str || '').join(' ') + '\n';
-      await page.cleanup();
+    console.log("File received:", req.file.originalname);
+
+    const buffer = req.file.buffer;
+    const text = await extractTextFromPDF(buffer);
+
+    console.log("Extracted text length:", text.length);
+
+    if (!text.trim()) {
+      return res.status(400).json({ error: 'Extracted text is empty' });
     }
-    await pdf.destroy();
-    
-    if (!fullText.trim()) throw new Error('Empty PDF');
-    res.json({ text: fullText });
+
+    return res.json({ text });
   } catch (err: any) {
-    res.status(500).json({ error: 'Parse failed', details: err.message });
+    console.error("PDF Parse Error:", err);
+    return res.status(500).json({ 
+      error: 'Failed to parse the PDF document', 
+      details: err.message 
+    });
   }
 });
 
+// Streaming analysis route
 app.post('/api/analyze-resume-stream', async (req, res) => {
   try {
     const { text } = req.body;
-    const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+    let apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'No API key' });
 
     res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    
     const send = (event: string, data: any) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 
     send('progress', { stage: 'analyzing', percent: 20 });
     const payload = await callOpenRouter(apiKey, [
       { role: 'system', content: 'Return valid JSON.' },
-      { role: 'user', content: `Analyze this resume: ${text}` }
+      { role: 'user', content: `Analyze this resume for ATS score: ${text}` }
     ]);
     
     const parsed = extractJsonObject(payload?.choices?.[0]?.message?.content || '{}');
     send('progress', { stage: 'tailoring', percent: 60 });
-    parsed.tailoredResume = normalizeResumeDraft(await generateTailoredResumeDraft(apiKey, text, parsed));
+    
+    const tailored = await generateTailoredResumeDraft(apiKey, text, parsed);
+    parsed.tailoredResume = normalizeResumeDraft(tailored);
     
     send('progress', { stage: 'complete', percent: 100 });
     send('result', parsed);
     res.end();
   } catch (err: any) {
+    console.error('SSE Error:', err);
     res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
     res.end();
   }

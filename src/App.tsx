@@ -17,45 +17,33 @@ import type { ResumeAnalysis } from './types/resume';
 import type { PreparedPdfUpload } from './hooks/usePdfUpload';
 
 function parsePdfWithProgress(
-  formData: FormData,
+  file: File,
   onProgress: (progress: number) => void
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+    formData.append('file', file); // Field name 'file' as requested
 
+    const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/parse-pdf');
     xhr.responseType = 'json';
 
     xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable || event.total === 0) {
-        return;
+      if (event.lengthComputable && event.total > 0) {
+        onProgress(Math.min(99, (event.loaded / event.total) * 100));
       }
-
-      const progress = Math.min(99, Math.max(0, (event.loaded / event.total) * 100));
-      onProgress(progress);
     };
 
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
         const payload = xhr.response as { error?: string, details?: string } | null;
-        const msg = payload?.error || 'Failed to parse the PDF document.';
-        const details = payload?.details ? ` (${payload.details})` : '';
-        reject(new Error(`${msg}${details}`));
+        reject(new Error(payload?.details || payload?.error || 'Failed to parse the PDF document.'));
         return;
       }
-
-      const payload = xhr.response as { text?: string } | null;
-      resolve(payload?.text ?? '');
+      resolve(xhr.response?.text ?? '');
     };
 
-    xhr.onerror = () => {
-      reject(new Error('Network error while uploading the PDF.'));
-    };
-
-    xhr.onabort = () => {
-      reject(new Error('PDF upload was canceled.'));
-    };
-
+    xhr.onerror = () => reject(new Error('Network error while uploading the PDF.'));
     xhr.send(formData);
   });
 }
@@ -67,16 +55,16 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState<'privacy' | 'terms' | 'api' | null>(null);
 
-  const handleFileUpload = async (_file: File, preparedUpload: PreparedPdfUpload) => {
+  const handleFileUpload = async (file: File) => {
     setIsLoading(true);
     setError(null);
     setAnalysis(null);
     setUploadProgress(0);
 
     try {
-      // 1. Upload to local backend to parse PDF
-      const text = await parsePdfWithProgress(preparedUpload.formData, (progress) => {
-        setUploadProgress(Math.min(50, progress)); // Map 0-100 to 0-50
+      // 1. Upload to backend to parse PDF using the requested 'file' field and buffer logic
+      const text = await parsePdfWithProgress(file, (progress) => {
+        setUploadProgress(Math.min(50, progress));
       });
 
       if (!text || text.trim().length === 0) {
@@ -85,13 +73,11 @@ export default function App() {
 
       // 2. Send text to Gemini API with streaming progress
       const result = await analyzeResumeStream(text, (progress) => {
-        // Map streaming progress (0-100) to upload progress range (50-100)
         setUploadProgress(50 + (progress * 0.5));
       });
       
       setUploadProgress(100);
       await new Promise(resolve => setTimeout(resolve, 800));
-
       setAnalysis(result);
 
     } catch (err: any) {
@@ -147,24 +133,9 @@ export default function App() {
 
       <footer className="w-full min-h-[48px] py-4 sm:py-0 bg-black/5 dark:bg-black/40 border-t border-black/5 dark:border-white/5 backdrop-blur-md flex flex-col sm:flex-row items-center justify-center sm:justify-between px-4 sm:px-8 gap-4 sm:gap-0 text-[11px] text-slate-500 z-10 mt-auto transition-colors duration-300">
         <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-          <button 
-            onClick={() => setOpenModal('privacy')}
-            className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            Privacy Policy
-          </button>
-          <button 
-            onClick={() => setOpenModal('terms')}
-            className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            Terms of Service
-          </button>
-          <button 
-            onClick={() => setOpenModal('api')}
-            className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            API Documentation
-          </button>
+          <button onClick={() => setOpenModal('privacy')} className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">Privacy Policy</button>
+          <button onClick={() => setOpenModal('terms')} className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">Terms of Service</button>
+          <button onClick={() => setOpenModal('api')} className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">API Documentation</button>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
@@ -172,32 +143,10 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Modals */}
-      <Modal
-        isOpen={openModal === 'privacy'}
-        onClose={() => setOpenModal(null)}
-        title="Privacy Policy"
-      >
-        <PrivacyPolicyContent />
-      </Modal>
+      <Modal isOpen={openModal === 'privacy'} onClose={() => setOpenModal(null)} title="Privacy Policy"><PrivacyPolicyContent /></Modal>
+      <Modal isOpen={openModal === 'terms'} onClose={() => setOpenModal(null)} title="Terms of Service"><TermsOfServiceContent /></Modal>
+      <Modal isOpen={openModal === 'api'} onClose={() => setOpenModal(null)} title="API Documentation"><ApiDocumentationContent /></Modal>
 
-      <Modal
-        isOpen={openModal === 'terms'}
-        onClose={() => setOpenModal(null)}
-        title="Terms of Service"
-      >
-        <TermsOfServiceContent />
-      </Modal>
-
-      <Modal
-        isOpen={openModal === 'api'}
-        onClose={() => setOpenModal(null)}
-        title="API Documentation"
-      >
-        <ApiDocumentationContent />
-      </Modal>
-
-      {/* Decorative background blur elements */}
       <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 dark:bg-blue-600/20 blur-[120px] pointer-events-none -z-10 transition-colors duration-300" />
       <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/10 dark:bg-indigo-600/20 blur-[120px] pointer-events-none -z-10 transition-colors duration-300" />
     </div>
