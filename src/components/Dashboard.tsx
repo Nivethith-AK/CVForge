@@ -90,6 +90,23 @@ function buildFallbackTailoredResume(analysis: ResumeAnalysis): string {
   ].join('\n');
 }
 
+function normalizeTailoredResumeDraft(draft: string, analysis: ResumeAnalysis): string {
+  const raw = (draft || '').replace(/\r\n/g, '\n').trim();
+  if (!raw || raw.length < 120) {
+    return buildFallbackTailoredResume(analysis);
+  }
+
+  const cleaned = raw
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/^\s*[-*]\s+/gm, '- ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return cleaned || buildFallbackTailoredResume(analysis);
+}
+
 /**
  * Validates and ensures all required fields in ResumeAnalysis are present and properly formatted
  */
@@ -115,10 +132,11 @@ function validateAndNormalizeAnalysis(analysis: ResumeAnalysis): ResumeAnalysis 
   const safeDraft = safeAnalysis.tailoredResume && !looksLikeInvalidDraft(safeAnalysis.tailoredResume)
     ? safeAnalysis.tailoredResume
     : fallbackDraft;
+  const normalizedDraft = normalizeTailoredResumeDraft(safeDraft, safeAnalysis);
 
   return {
     ...safeAnalysis,
-    tailoredResume: safeDraft,
+    tailoredResume: normalizedDraft,
   };
 }
 
@@ -159,23 +177,23 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
   const strokeDashoffset = circumference - (validatedAnalysis.atsScore / 100) * circumference;
 
   const sectionTitles = new Set([
-    'FULL NAME',
-    'Contact Information',
-    'Professional Summary',
-    'Core Skills',
-    'Professional Experience',
-    'Education',
-    'Certifications',
-    'Certifications / Training',
-    'Languages',
-    'Additional Information',
-    'Core Strengths',
-    'Resume Focus Areas',
-    'Recommended Target Roles',
-    'Suggested Skills to Add If Accurate',
+    'full name',
+    'contact information',
+    'professional summary',
+    'core skills',
+    'professional experience',
+    'education',
+    'certifications',
+    'certifications / training',
+    'languages',
+    'additional information',
+    'core strengths',
+    'resume focus areas',
+    'recommended target roles',
+    'suggested skills to add if accurate',
   ]);
 
-  const isSectionTitle = (line: string) => sectionTitles.has(line.trim());
+  const isSectionTitle = (line: string) => sectionTitles.has(line.trim().replace(/:$/, '').toLowerCase());
 
   const downloadResumePdf = () => {
     const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
@@ -183,7 +201,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
     const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 48;
     const contentWidth = pageWidth - margin * 2;
-    const lineHeight = 16;
+    const lineHeight = 15;
     const sectionGap = 12;
     const bulletIndent = 12;
 
@@ -240,11 +258,11 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       }
 
       if (line.includes('|') || line.includes('@') || line.match(/^\+?[\d\s()-]+$/)) {
-        drawWrappedText(line, { size: 6, color: [71, 85, 105] });
+        drawWrappedText(line, { size: 10, color: [71, 85, 105] });
         return;
       }
 
-      drawWrappedText(line, { size: 6, color: [30, 41, 59] });
+      drawWrappedText(line, { size: 11, color: [30, 41, 59] });
     });
 
     const pdfBlob = pdf.output('blob');
