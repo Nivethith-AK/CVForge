@@ -1,3 +1,4 @@
+/// <reference types="react" />
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import type { ResumeAnalysis } from '@/src/types/resume';
