@@ -91,6 +91,20 @@ Your documents are processed entirely in-memory using secure Node.js buffers. No
    npm run dev
    ```
 
+### E2E Testing (Playwright)
+
+Run against production (default):
+
+```bash
+npm run test:e2e
+```
+
+Run against a specific deployment:
+
+```bash
+E2E_BASE_URL="https://your-deployment.vercel.app" npm run test:e2e
+```
+
 ---
 
 ## 📂 Project Structure
