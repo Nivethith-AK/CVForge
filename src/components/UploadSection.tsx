@@ -96,6 +96,17 @@ export function UploadSection({ onFileUpload, isLoading, uploadProgress, error }
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2 transition-colors duration-300">
           Resume Upload
         </h1>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 transition-colors duration-300">
+          GitHub Repo:{' '}
+          <a
+            href="https://github.com/Nivethith-AK/CVForge"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            github.com/Nivethith-AK/CVForge
+          </a>
+        </p>
         <p className="text-sm text-slate-600 dark:text-slate-400 transition-colors duration-300">
           Upload your PDF resume to receive an instant, AI-driven ATS compatibility breakdown.
         </p>
