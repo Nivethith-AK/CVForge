@@ -99,22 +99,188 @@ async function callOpenRouter(apiKey: string, messages: any[]) {
 }
 
 function normalizeResumeDraft(draft: string) {
-  return draft.replace(/```[\s\S]*?```/g, '').trim();
+  if (!draft || typeof draft !== 'string') return '';
+  // Remove only markdown code blocks (``` ... ```)
+  let normalized = draft.replace(/```[\s\S]*?```/g, '').trim();
+  // If the entire content was removed, return the original
+  if (!normalized && draft.trim()) {
+    normalized = draft.trim();
+  }
+  return normalized;
 }
 
 async function generateTailoredResumeDraft(apiKey: string, text: string, analysis: any) {
-  const payload = await callOpenRouter(apiKey, [
-    { role: 'system', content: 'You rewrite resumes. Return only plain text.' },
-    { role: 'user', content: `Rewrite this resume based on analysis: ${text}` }
-  ]);
-  return payload?.choices?.[0]?.message?.content || 'Draft failed';
+  try {
+    const payload = await callOpenRouter(apiKey, [
+      { role: 'system', content: 'You rewrite resumes. Return only plain text and keep a clean, ready-to-submit resume structure.' },
+      { role: 'user', content: `Rewrite this resume based on this analysis JSON and the source resume text. Keep the output as a polished resume with sections like summary, skills, experience, education, and certifications when relevant. Analysis JSON: ${JSON.stringify(analysis)}. Source resume text: ${text}` }
+    ]);
+    return payload?.choices?.[0]?.message?.content || text;
+  } catch (error) {
+    console.warn('Failed to generate tailored resume:', error);
+    return text; // Fallback to original text if tailoring fails
+  }
 }
 
 function extractJsonObject(text: string) {
   const startIndex = text.indexOf('{');
   const endIndex = text.lastIndexOf('}');
   if (startIndex === -1 || endIndex === -1) throw new Error('No JSON found in model response');
-  return JSON.parse(text.slice(startIndex, endIndex + 1));
+  try {
+    return JSON.parse(text.slice(startIndex, endIndex + 1));
+  } catch (error) {
+    console.error('Failed to parse JSON:', text.slice(startIndex, endIndex + 1));
+    throw new Error(`Invalid JSON from model: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+function toTrimmedString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value).trim();
+  }
+
+  return '';
+}
+
+function toStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => toTrimmedString(item))
+      .filter((item) => item.length > 0);
+  }
+
+  const text = toTrimmedString(value);
+  if (!text) {
+    return [];
+  }
+
+  return text
+    .split(/\r?\n|[;,•]/g)
+    .map((item) => item.replace(/^[-*]\s*/, '').trim())
+    .filter((item) => item.length > 0);
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))];
+}
+
+function firstNonEmptyString(...values: unknown[]) {
+  for (const value of values) {
+    const text = toTrimmedString(value);
+    if (text) {
+      return text;
+    }
+  }
+
+  return '';
+}
+
+function deriveAtsScore(parsed: Record<string, any>, resumeText: string) {
+  const explicitScore = Number(parsed.atsScore ?? parsed.score ?? parsed.matchScore ?? parsed.ATSScore);
+  if (Number.isFinite(explicitScore)) {
+    return Math.max(0, Math.min(100, Math.round(explicitScore)));
+  }
+
+  const skillCount = toStringArray(parsed.skills ?? parsed.keySkills ?? parsed.coreSkills).length;
+  const experienceCount = Array.isArray(parsed.experience) ? parsed.experience.length : 0;
+  const textSignals = [
+    /python|javascript|typescript|sql|node\.js|react|azure|aws|gcp|machine learning|data/i.test(resumeText),
+    /project|experience|education|certification/i.test(resumeText),
+  ].filter(Boolean).length;
+
+  const score = 48 + skillCount * 5 + experienceCount * 4 + textSignals * 8;
+  return Math.max(35, Math.min(92, Math.round(score)));
+}
+
+function normalizeResumeAnalysis(parsed: Record<string, any>, resumeText: string, tailoredResume: string) {
+  const name = firstNonEmptyString(parsed.name, parsed.fullName, parsed.candidateName);
+  const title = firstNonEmptyString(parsed.title, parsed.role, parsed.professionalTitle, parsed.targetRole);
+  const skills = uniqueStrings(toStringArray(parsed.skills ?? parsed.keySkills ?? parsed.coreSkills ?? parsed.technicalSkills));
+  const strengths = uniqueStrings(
+    toStringArray(parsed.strengths ?? parsed.keyStrengths ?? parsed.highlights ?? parsed.positiveSignals)
+  );
+  const weaknesses = uniqueStrings(
+    toStringArray(parsed.weaknesses ?? parsed.improvementAreas ?? parsed.gaps ?? parsed.concerns)
+  );
+  const missingSkills = uniqueStrings(
+    toStringArray(parsed.missingSkills ?? parsed.skillGaps ?? parsed.skillsToAdd ?? parsed.skillsMissing)
+  );
+  const improvements = uniqueStrings(
+    toStringArray(
+      parsed.improvements ?? parsed.recommendations ?? parsed.nextSteps ?? parsed.actionableNextSteps ?? parsed.suggestions
+    )
+  );
+  const recommendedRoles = uniqueStrings(
+    toStringArray(parsed.recommendedRoles ?? parsed.targetRoles ?? parsed.roles ?? parsed.roleSuggestions)
+  );
+
+  const summaryFromModel = firstNonEmptyString(
+    parsed.summary,
+    parsed.executiveSummary,
+    parsed.professionalSummary,
+    parsed.profileSummary
+  );
+
+  const summary =
+    summaryFromModel ||
+    `Candidate${name ? ` ${name}` : ''}${title ? ` is a ${title}` : ''}${skills.length ? ` with skills in ${skills.slice(0, 4).join(', ')}` : ''}.`;
+
+  const resolvedStrengths = strengths.length
+    ? strengths
+    : uniqueStrings([
+        title ? `Focused ${title} profile` : 'Clear professional profile',
+        skills.length ? `Relevant skills include ${skills.slice(0, 4).join(', ')}` : 'Contains transferable technical experience',
+        resumeText ? 'Resume text was successfully extracted' : 'Text extraction completed',
+      ]);
+
+  const resolvedWeaknesses = weaknesses.length
+    ? weaknesses
+    : uniqueStrings([
+        skills.length < 5 ? 'Add more role-specific keywords if they are accurate' : '',
+        'Strengthen impact metrics and measurable outcomes',
+      ]);
+
+  const resolvedMissingSkills = missingSkills.length
+    ? missingSkills
+    : uniqueStrings([
+        'Quantifiable achievements',
+        'Role-specific ATS keywords',
+        skills.length ? '' : 'Technical skills aligned to the target role',
+      ]);
+
+  const resolvedImprovements = improvements.length
+    ? improvements
+    : uniqueStrings([
+        'Tailor the summary to the target role',
+        'Add stronger bullet points with measurable outcomes',
+        'Place the most relevant technical skills near the top',
+      ]);
+
+  const resolvedRecommendedRoles = recommendedRoles.length
+    ? recommendedRoles
+    : uniqueStrings([
+        title || (skills.includes('Python') ? 'Data Analyst' : ''),
+        skills.includes('Python') || skills.includes('SQL') ? 'AI Engineer' : '',
+        skills.includes('Node.js') ? 'Full Stack Developer' : '',
+        'Resume-tailored professional roles',
+      ]);
+
+  const resolvedTailoredResume = firstNonEmptyString(tailoredResume, parsed.tailoredResume) || resumeText;
+
+  return {
+    atsScore: deriveAtsScore(parsed, resumeText),
+    strengths: resolvedStrengths,
+    weaknesses: resolvedWeaknesses,
+    missingSkills: resolvedMissingSkills,
+    improvements: resolvedImprovements,
+    recommendedRoles: resolvedRecommendedRoles,
+    summary,
+    tailoredResume: normalizeResumeDraft(resolvedTailoredResume),
+  };
 }
 
 async function ensureDomMatrixPolyfill() {
@@ -242,15 +408,29 @@ app.post('/api/analyze-resume', async (req, res) => {
     }
 
     const payload = await callOpenRouter(apiKey, [
-      { role: 'system', content: 'Return valid JSON only.' },
-      { role: 'user', content: `Analyze this resume: ${text}` },
+      { role: 'system', content: 'You are a professional resume analyst. Return ONLY valid JSON, no additional text.' },
+      { role: 'user', content: `Analyze this resume and return JSON with these exact fields:
+{
+  "name": "candidate name",
+  "title": "job title",
+  "skills": ["skill1", "skill2"],
+  "strengths": ["strength1", "strength2"],
+  "weaknesses": ["weakness1", "weakness2"],
+  "missingSkills": ["skill gap 1", "skill gap 2"],
+  "improvements": ["improvement 1", "improvement 2"],
+  "recommendedRoles": ["role1", "role2"],
+  "atsScore": 75,
+  "summary": "professional summary"
+}
+
+Resume: ${text}` },
     ]);
 
     const parsed = extractJsonObject(payload?.choices?.[0]?.message?.content || '{}');
     const tailored = await generateTailoredResumeDraft(apiKey, text, parsed);
-    parsed.tailoredResume = normalizeResumeDraft(tailored);
+    const normalized = normalizeResumeAnalysis(parsed, text, tailored);
 
-    return res.json(parsed);
+    return res.json(normalized);
   } catch (err: any) {
     console.error('Analyze route error:', err);
     return res.status(500).json({ error: err.message || 'Failed to analyze resume.' });
@@ -275,18 +455,32 @@ app.post('/api/analyze-resume-stream', async (req, res) => {
 
     send('progress', { stage: 'analyzing', percent: 20 });
     const payload = await callOpenRouter(apiKey, [
-      { role: 'system', content: 'Return valid JSON.' },
-      { role: 'user', content: `Analyze this resume: ${text}` }
+      { role: 'system', content: 'You are a professional resume analyst. Return ONLY valid JSON, no additional text.' },
+      { role: 'user', content: `Analyze this resume and return JSON with these exact fields:
+{
+  "name": "candidate name",
+  "title": "job title",
+  "skills": ["skill1", "skill2"],
+  "strengths": ["strength1", "strength2"],
+  "weaknesses": ["weakness1", "weakness2"],
+  "missingSkills": ["skill gap 1", "skill gap 2"],
+  "improvements": ["improvement 1", "improvement 2"],
+  "recommendedRoles": ["role1", "role2"],
+  "atsScore": 75,
+  "summary": "professional summary"
+}
+
+Resume: ${text}` }
     ]);
     
     const parsed = extractJsonObject(payload?.choices?.[0]?.message?.content || '{}');
     send('progress', { stage: 'tailoring', percent: 60 });
     
     const tailored = await generateTailoredResumeDraft(apiKey, text, parsed);
-    parsed.tailoredResume = normalizeResumeDraft(tailored);
+    const normalized = normalizeResumeAnalysis(parsed, text, tailored);
     
     send('progress', { stage: 'complete', percent: 100 });
-    send('result', parsed);
+    send('result', normalized);
     res.end();
   } catch (err: any) {
     console.error('SSE Error:', err);
