@@ -80,15 +80,14 @@ function extractJsonObject(text: string) {
 
 // PDF Extraction Logic (User's suggested approach, adapted for Express)
 export async function extractTextFromPDF(buffer: ArrayBuffer) {
-  // Set worker for Node environment
-  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-  }
-
+  // DO NOT set workerSrc to a URL in Node.js - it will fail with 'Cannot find module'
+  
   const pdf = await pdfjsLib.getDocument({ 
     data: new Uint8Array(buffer),
-    disableWorker: true,
-    verbosity: 0 
+    disableWorker: true, // Forces parsing on the main thread (essential for Vercel)
+    verbosity: 0,
+    useSystemFonts: true,
+    disableFontFace: true
   }).promise;
 
   let text = "";
