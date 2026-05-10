@@ -211,7 +211,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
     const lines = editableResume.split(/\r?\n/);
     let renderedName = false;
 
-    lines.forEach((rawLine) => {
+    lines.forEach((rawLine: string) => {
       const line = rawLine.trim();
 
       if (!line) {
