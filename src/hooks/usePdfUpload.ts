@@ -13,6 +13,7 @@ export interface PreparedPdfUpload {
     type: string;
     lastModified: number;
   };
+  extractedText?: string;
 }
 
 interface UsePdfUploadState {
@@ -191,6 +192,9 @@ export function usePdfUpload() {
         }));
         return;
       }
+
+      // attach extracted text so the frontend can short-circuit server parsing
+      preparedUpload.extractedText = text;
 
       setState((prev) => ({
         ...prev,
