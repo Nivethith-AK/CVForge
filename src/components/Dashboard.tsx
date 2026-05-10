@@ -240,11 +240,11 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       }
 
       if (line.includes('|') || line.includes('@') || line.match(/^\+?[\d\s()-]+$/)) {
-        drawWrappedText(line, { size: 06, color: [71, 85, 105] });
+        drawWrappedText(line, { size: 6, color: [71, 85, 105] });
         return;
       }
 
-      drawWrappedText(line, { size: 06, color: [30, 41, 59] });
+      drawWrappedText(line, { size: 6, color: [30, 41, 59] });
     });
 
     const pdfBlob = pdf.output('blob');
@@ -321,7 +321,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
                 ></motion.circle>
               </svg>
               <div className="absolute flex flex-col items-center justify-center">
-                <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 tracking-tighter">
+                <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 tracking-tighter">
                   {validatedAnalysis.atsScore}%
                 </div>
               </div>
