@@ -16,6 +16,30 @@ import { analyzeResumeStream } from './services/geminiService';
 import type { ResumeAnalysis } from './types/resume';
 import type { PreparedPdfUpload } from './hooks/usePdfUpload';
 
+async function extractTextLocallyFromPdf(file: File): Promise<string> {
+  const pdfjsEntry: string = 'pdfjs-dist/legacy/build/pdf.mjs';
+  const pdfjs = await import(pdfjsEntry);
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
+  const doc = await loadingTask.promise;
+
+  const pages: string[] = [];
+  for (let pageNum = 1; pageNum <= doc.numPages; pageNum += 1) {
+    const page = await doc.getPage(pageNum);
+    const content = await page.getTextContent();
+    const pageText = (content.items as Array<{ str?: string }>)
+      .map((item) => item?.str || '')
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (pageText.length > 0) {
+      pages.push(pageText);
+    }
+  }
+
+  return pages.join('\n\n').trim();
+}
+
 function parsePdfWithProgress(
   file: File,
   onProgress: (progress: number) => void
@@ -37,7 +61,22 @@ function parsePdfWithProgress(
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
         const payload = xhr.response as { error?: string, details?: string } | null;
-        reject(new Error(payload?.details || payload?.error || 'Failed to parse the PDF document.'));
+        const serverError = payload?.details || payload?.error || 'Failed to parse the PDF document.';
+
+        // If the server-side parser fails on Vercel, extract the text directly in the browser.
+        if (serverError.includes('DOMMatrix') || serverError.includes('pdf-parse')) {
+          extractTextLocallyFromPdf(file)
+            .then((text) => {
+              onProgress(100);
+              resolve(text);
+            })
+            .catch((localError) => {
+              reject(new Error(`${serverError} (browser fallback failed: ${localError instanceof Error ? localError.message : String(localError)})`));
+            });
+          return;
+        }
+
+        reject(new Error(serverError));
         return;
       }
       resolve(xhr.response?.text ?? '');
