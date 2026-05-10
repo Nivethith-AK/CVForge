@@ -202,10 +202,11 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
     const margin = 48;
     const contentWidth = pageWidth - margin * 2;
     const lineHeight = 15;
-    const sectionGap = 12;
+    const sectionGap = 14;
     const bulletIndent = 12;
 
     let cursorY = margin;
+    let hasSeenFirstSection = false;
 
     const ensureSpace = (heightNeeded: number) => {
       if (cursorY + heightNeeded > pageHeight - margin) {
@@ -213,6 +214,17 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
         cursorY = margin;
       }
     };
+
+    const drawSectionDivider = () => {
+      ensureSpace(12);
+      pdf.setDrawColor(203, 213, 225);
+      pdf.setLineWidth(0.8);
+      pdf.line(margin, cursorY + 3, pageWidth - margin, cursorY + 3);
+      cursorY += 10;
+    };
+
+    const isContactLine = (line: string) =>
+      line.includes('|') || line.includes('@') || /^\+?[\d\s()-]+$/.test(line);
 
     const drawWrappedText = (text: string, options?: { bold?: boolean; size?: number; color?: [number, number, number]; indent?: number }) => {
       const size = options?.size ?? 11;
@@ -234,21 +246,28 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
       const line = rawLine.trim();
 
       if (!line) {
-        cursorY += 8;
+        cursorY += hasSeenFirstSection ? 6 : 4;
         return;
       }
 
       if (!renderedName && !isSectionTitle(line) && !line.startsWith('-') && !line.startsWith('•')) {
         drawWrappedText(line, { bold: true, size: 18, color: [15, 23, 42] });
-        cursorY += 4;
+        cursorY += 2;
+        drawSectionDivider();
         renderedName = true;
         return;
       }
 
+      if (!hasSeenFirstSection && isContactLine(line)) {
+        drawWrappedText(line, { size: 10, color: [71, 85, 105] });
+        return;
+      }
+
       if (isSectionTitle(line)) {
+        hasSeenFirstSection = true;
         cursorY += sectionGap;
-        drawWrappedText(line.toUpperCase(), { bold: true, size: 12, color: [14, 116, 144] });
-        cursorY += 2;
+        drawWrappedText(line.toUpperCase(), { bold: true, size: 11, color: [15, 118, 110] });
+        drawSectionDivider();
         return;
       }
 
@@ -257,7 +276,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
         return;
       }
 
-      if (line.includes('|') || line.includes('@') || line.match(/^\+?[\d\s()-]+$/)) {
+      if (isContactLine(line)) {
         drawWrappedText(line, { size: 10, color: [71, 85, 105] });
         return;
       }
