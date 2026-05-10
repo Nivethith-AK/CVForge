@@ -182,6 +182,10 @@ export default function App() {
           <button onClick={() => setOpenModal('terms')} className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">Terms of Service</button>
           <button onClick={() => setOpenModal('api')} className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">API Documentation</button>
         </div>
+        <div className="flex items-center gap-4">
+          <a href="https://github.com/YOUR_GITHUB" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors">GitHub</a>
+          <a href="https://instagram.com/YOUR_INSTAGRAM" target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white transition-colors">Instagram</a>
+        </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
           <span>AI Engine: Gemini Pro 3.1</span>
