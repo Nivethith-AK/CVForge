@@ -117,19 +117,44 @@ function extractJsonObject(text: string) {
   return JSON.parse(text.slice(startIndex, endIndex + 1));
 }
 
+async function extractWithPdfJs(buffer: Buffer): Promise<string> {
+  const pdfjsEntry = 'pdfjs-dist/legacy/build/pdf.mjs';
+  const pdfjs = await import(pdfjsEntry);
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(buffer) });
+  const doc = await loadingTask.promise;
+
+  const pages: string[] = [];
+  for (let pageNum = 1; pageNum <= doc.numPages; pageNum += 1) {
+    const page = await doc.getPage(pageNum);
+    const content = await page.getTextContent();
+    const pageText = (content.items as Array<{ str?: string }>)
+      .map((item) => item?.str || '')
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (pageText.length > 0) {
+      pages.push(pageText);
+    }
+  }
+
+  return pages.join('\n\n').trim();
+}
+
 // PDF Extraction Logic using pdf-parse (as requested)
 export async function extractTextFromPDF(buffer: Buffer) {
   try {
-    // Prefer the node-targeted build to avoid browser-only globals (e.g. DOMMatrix)
-    // that can crash in serverless runtimes.
-    let module: any;
     try {
-      const nodeBuildEntry = 'pdf-parse/dist/node/esm/index.js';
-      module = await import(nodeBuildEntry);
-    } catch {
-      module = await import('pdf-parse');
+      const text = await extractWithPdfJs(buffer);
+      if (text && text.trim().length > 0) {
+        return text;
+      }
+    } catch (pdfJsError: any) {
+      console.warn('pdfjs extraction failed, falling back to pdf-parse:', pdfJsError?.message || pdfJsError);
     }
 
+    // Secondary fallback path.
+    const module: any = await import('pdf-parse');
     const PDFParseCtor = module?.PDFParse;
 
     if (typeof PDFParseCtor === 'function') {
@@ -147,7 +172,7 @@ export async function extractTextFromPDF(buffer: Buffer) {
       return data?.text || '';
     }
 
-    throw new Error('Unsupported pdf-parse module shape');
+    throw new Error('No compatible PDF parser available');
   } catch (err: any) {
     throw new Error(`pdf-parse failed: ${err.message}`);
   }
