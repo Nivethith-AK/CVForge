@@ -1,46 +1,70 @@
 # 🚀 CVForge: AI-Powered Resume Intelligence
 
+<div align="center">
+
 ![CVForge Homepage](./public/homepage.png)
 
-**CVForge** is a state-of-the-art Resume Analyzer and ATS (Applicant Tracking System) simulation platform. Built for modern job seekers, it leverages Google's Gemini AI to provide deep semantic insights into your resume, helping you bridge the gap between your experience and your dream job.
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.0.0-blue.svg)](https://nodejs.org/)
+[![React Version](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4.0-38bdf8.svg)](https://tailwindcss.com/)
+[![Gemini AI](https://img.shields.io/badge/AI-Gemini_Pro-purple.svg)](https://ai.google.dev/)
+
+**Stop guessing, start tailoring.** CVForge is a state-of-the-art Resume Analyzer and ATS simulation platform that leverages Google's Gemini AI to bridge the gap between your professional experience and your dream job.
+
+[Features](#-key-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Workflow](#-how-it-works)
+
+</div>
 
 ---
 
 ## ✨ Key Features
 
 ### 📊 Precision ATS Scoring
-Get an instant, data-driven score out of 100 based on simulated ATS algorithms. Understand exactly how a machine sees your resume before it ever reaches a human recruiter.
+Gain an instant, data-driven score out of 100. Our algorithms simulate modern Applicant Tracking Systems, showing you exactly how machines see your profile.
 
-### 🧠 Semantic Analysis via Gemini AI
-Unlike basic keyword scanners, CVForge uses **Google Gemini** to perform deep semantic analysis. It understands your professional narrative, the impact of your achievements, and the nuance of your experience.
+### 🧠 Semantic Intelligence
+Powered by **Google Gemini**, CVForge performs deep semantic analysis. It goes beyond simple keywords to understand the *narrative impact* and *quantifiable achievements* of your career.
 
 ### 🎯 Skill Gap Detection
-CVForge identifies technical and soft skills commonly found in your target roles that are missing from your profile, providing a roadmap for upskilling.
+Identify the "missing pieces." CVForge compares your resume against industry standards for your target roles and provides a concrete roadmap for upskilling.
 
-### ✍️ AI-Driven Tailored Drafts
-Receive a fully reformatted, ATS-optimized version of your resume draft. Edit it in real-time with our custom-built editor and export it directly to PDF.
+### ✍️ Live AI Tailored Editor
+Receive a reformatted, ATS-optimized version of your experience. Use our integrated **Radix UI** editor to make final polishes and export directly to a professional PDF.
 
-### 🔒 Privacy-First Architecture
-Your data is yours. CVForge processes all documents in-memory on a secure backend. No resumes are ever stored in databases or persistent storage.
+### 🔒 Privacy-First
+Your documents are processed entirely in-memory using secure Node.js buffers. No resumes are ever stored, logged, or shared.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Framer Motion
-- **UI Components**: Radix UI (ScrollArea, Separator), Lucide React
-- **Backend**: Node.js, Express, Multer
-- **AI Engine**: Google Gemini API (via OpenRouter)
-- **PDF Processing**: `pdf-parse` (TypeScript Edition)
-- **Export**: jsPDF
+| Category | Technology |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, Tailwind CSS v4, Framer Motion |
+| **UI/UX** | Radix UI (ScrollArea, Separator), Lucide Icons |
+| **Backend** | Node.js, Express, Multer (Memory Storage) |
+| **AI Engine** | Google Gemini API (via OpenRouter) |
+| **Parsing** | `pdf-parse` (TypeScript) |
+| **PDF Export** | jsPDF |
+
+---
+
+## 🔄 How It Works
+
+1.  **Upload**: Securely drop your PDF resume into the dropzone.
+2.  **Parse**: The Node.js backend extracts raw text using high-fidelity parsing.
+3.  **Analyze**: Gemini AI performs a multi-stage analysis (ATS Score, Strengths, Weaknesses).
+4.  **Tailor**: The system generates an optimized "Draft" version of your resume.
+5.  **Polish**: Edit the draft in our custom editor and download your new PDF.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 22.x or later
-- An OpenRouter or Gemini API Key
+- Node.js **22.x** or later
+- An **OpenRouter** API Key (Gemini 1.5/2.0 Models)
 
 ### Installation
 
@@ -50,34 +74,37 @@ Your data is yours. CVForge processes all documents in-memory on a secure backen
    cd CVForge
    ```
 
-2. **Configure Environment Variables:**
-   Create a `.env` file in the root directory:
+2. **Environment Setup:**
+   Create a `.env` file in the root:
    ```env
-   GEMINI_API_KEY="your_api_key_here"
+   OPENROUTER_API_KEY="your_openrouter_key_here"
    PORT=3001
    ```
 
-3. **Install Dependencies:**
+3. **Deploy:**
    ```bash
    npm install
    ```
 
-4. **Launch Development Server:**
+4. **Launch:**
    ```bash
    npm run dev
    ```
-
-5. **Open the App:**
-   Navigate to [http://localhost:3001](http://localhost:3001) in your browser.
 
 ---
 
 ## 📂 Project Structure
 
-- `src/components/` - High-performance UI components.
-- `src/services/` - Gemini AI streaming integration.
-- `src/hooks/` - Custom React hooks for PDF handling.
-- `server.ts` - Express server with Vite middleware integration.
+```text
+├── src/
+│   ├── components/  # Atomic & Layout components
+│   ├── hooks/       # Logic for PDF uploads & streaming
+│   ├── services/    # Gemini AI API integration
+│   └── lib/         # Shared utilities (cn, etc.)
+├── public/          # Static assets & screenshots
+├── server.ts        # Express API & Vite Middleware
+└── README.md        # You are here!
+```
 
 ---
 
@@ -87,4 +114,10 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-Built with ❤️ by Nivethith-AK.
+<div align="center">
+
+Built with ❤️ by **Nivethith-AK**
+
+[GitHub](https://github.com/Nivethith-AK) • [LinkedIn](https://linkedin.com/in/your-profile)
+
+</div>
