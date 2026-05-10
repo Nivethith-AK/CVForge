@@ -3,7 +3,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import multer from 'multer';
-import { PDFParse } from 'pdf-parse';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
@@ -21,8 +21,8 @@ async function startServer() {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'http://localhost:3001',
-        'X-Title': 'AI Resume Analyzer',
+        'HTTP-Referer': process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cvforge-lake.vercel.app',
+        'X-Title': 'CVForge - AI Resume Analyzer',
       },
       body: JSON.stringify({
         model: 'openrouter/auto',
@@ -330,29 +330,57 @@ ${text}
 
   // API Route to parse PDF
   app.post('/api/parse-pdf', upload.single('resume'), async (req, res) => {
-    let parser: PDFParse | undefined;
     try {
       if (!req.file) {
+        console.error('No file received in /api/parse-pdf');
         res.status(400).json({ error: 'No file uploaded' });
         return;
       }
 
-      parser = new PDFParse({ data: req.file.buffer });
-      const pdfData = await parser.getText();
+      console.log('File received for parsing:', req.file.originalname);
+      console.log('File size:', req.file.size, 'bytes');
 
-      if (!pdfData || !pdfData.text) {
-        res.status(400).json({ error: 'Could not extract text from PDF' });
+      // Set worker src for Node.js
+      // @ts-ignore
+      if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        // @ts-ignore
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.js';
+      }
+
+      const data = new Uint8Array(req.file.buffer);
+      const loadingTask = pdfjsLib.getDocument({
+        data,
+        useSystemFonts: true,
+        disableFontFace: true,
+      });
+
+      const pdf = await loadingTask.promise;
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        // @ts-ignore - items property exists but type definition might be complex
+        const strings = content.items.map((item: any) => item.str || '');
+        fullText += strings.join(' ') + '\n';
+        // Cleanup page resources
+        await page.cleanup();
+      }
+
+      // Explicitly destroy the document to free memory
+      await pdf.destroy();
+
+      if (!fullText.trim()) {
+        console.error('Could not extract text from PDF (empty result)');
+        res.status(400).json({ error: 'Could not extract text from PDF. It might be an image-only PDF or encrypted.' });
         return;
       }
 
-      res.json({ text: pdfData.text });
-    } catch (error) {
+      console.log('Successfully extracted text, length:', fullText.length);
+      res.json({ text: fullText });
+    } catch (error: any) {
       console.error('Error parsing PDF:', error);
-      res.status(500).json({ error: 'Failed to process the PDF document.' });
-    } finally {
-      if (parser) {
-        await parser.destroy();
-      }
+      res.status(500).json({ error: `Failed to process the PDF document: ${error.message}` });
     }
   });
 
@@ -372,9 +400,16 @@ ${text}
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }
 }
 
-startServer().catch(console.error);
+// Export the app for Vercel
+export default app;
+
+if (!process.env.VERCEL) {
+  startServer().catch(console.error);
+}
