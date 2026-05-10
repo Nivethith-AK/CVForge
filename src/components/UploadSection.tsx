@@ -44,15 +44,26 @@ export function UploadSection({ onFileUpload, isLoading, uploadProgress, error }
       return;
     }
 
+    // If we just started loading, do an initial quick ramp to show responsiveness
+    setDisplayProgress((prev) => Math.max(prev, 12));
+
     const interval = setInterval(() => {
       setDisplayProgress((prev) => {
-        if (uploadProgress === 0) return 0;
-        if (prev >= uploadProgress) return uploadProgress;
-        const diff = uploadProgress - prev;
-        const step = Math.max(0.6, diff * 0.15); // Fast smooth ticking
-        return Math.min(uploadProgress, prev + step);
+        // If server reports progress, gently catch up
+        if (uploadProgress > prev) {
+          const diff = uploadProgress - prev;
+          const step = Math.max(0.6, diff * 0.18);
+          return Math.min(uploadProgress, prev + step);
+        }
+
+        // If server is stalled (no reported progress), increment slowly up to 95%
+        if (prev < 95) {
+          return Number((prev + 0.25).toFixed(2));
+        }
+
+        return prev;
       });
-    }, 16);
+    }, 40);
 
     return () => clearInterval(interval);
   }, [uploadProgress, isLoading, isPreparing]);
