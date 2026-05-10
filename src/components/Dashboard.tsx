@@ -24,35 +24,100 @@ interface DashboardProps {
   onReset: () => void;
 }
 
+function cleanList(items: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(items)) return fallback;
+
+  const normalized = [...new Set(
+    items
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter((item) => item.length > 0)
+  )];
+
+  return normalized.length > 0 ? normalized : fallback;
+}
+
+function looksLikeInvalidDraft(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const invalidSignals = [
+    "i'm sorry",
+    'i am sorry',
+    'unable to',
+    'cannot create',
+    'not enough information',
+    'if you can share',
+    'please provide',
+  ];
+
+  return invalidSignals.some((signal) => normalized.includes(signal));
+}
+
+function buildFallbackTailoredResume(analysis: ResumeAnalysis): string {
+  const topRoles = analysis.recommendedRoles.slice(0, 3).join(' | ');
+  const topSkills = analysis.strengths.slice(0, 5);
+  const focusAreas = analysis.improvements.slice(0, 3);
+  const missing = analysis.missingSkills.slice(0, 4);
+
+  return [
+    'Candidate Name',
+    topRoles || 'Target Role',
+    '',
+    'CONTACT INFORMATION',
+    'Email | Phone | LinkedIn | Location',
+    '',
+    'PROFESSIONAL SUMMARY',
+    analysis.summary,
+    '',
+    'CORE STRENGTHS',
+    ...topSkills.map((item) => `- ${item}`),
+    '',
+    'PROFESSIONAL EXPERIENCE',
+    '- Added ATS-aligned and impact-focused bullet points tailored to target roles.',
+    '- Highlighted measurable outcomes and role-relevant technical depth.',
+    '- Reordered content for stronger recruiter and ATS readability.',
+    '',
+    'RESUME FOCUS AREAS',
+    ...focusAreas.map((item) => `- ${item}`),
+    '',
+    'SUGGESTED SKILLS TO ADD IF ACCURATE',
+    ...missing.map((item) => `- ${item}`),
+    '',
+    'EDUCATION',
+    'Degree | Institution | Year',
+    '',
+    'CERTIFICATIONS / TRAINING',
+    '- Add relevant certifications and coursework',
+  ].join('\n');
+}
+
 /**
  * Validates and ensures all required fields in ResumeAnalysis are present and properly formatted
  */
 function validateAndNormalizeAnalysis(analysis: ResumeAnalysis): ResumeAnalysis {
-  return {
-    atsScore: typeof analysis.atsScore === 'number' && analysis.atsScore >= 0 && analysis.atsScore <= 100 
-      ? analysis.atsScore 
+  const safeSummary = typeof analysis.summary === 'string' && analysis.summary.trim().length > 0
+    ? analysis.summary.trim()
+    : 'Resume analyzed successfully. Review the sections below for detailed insights.';
+
+  const safeAnalysis: ResumeAnalysis = {
+    atsScore: typeof analysis.atsScore === 'number' && analysis.atsScore >= 0 && analysis.atsScore <= 100
+      ? analysis.atsScore
       : 50,
-    strengths: Array.isArray(analysis.strengths) && analysis.strengths.length > 0 
-      ? analysis.strengths 
-      : ['Clear professional profile', 'Extractable resume content'],
-    weaknesses: Array.isArray(analysis.weaknesses) && analysis.weaknesses.length > 0 
-      ? analysis.weaknesses 
-      : ['Consider adding measurable impact metrics', 'Strengthen bullet point descriptions'],
-    missingSkills: Array.isArray(analysis.missingSkills) && analysis.missingSkills.length > 0 
-      ? analysis.missingSkills 
-      : ['Quantifiable achievements', 'Project-specific technical details'],
-    improvements: Array.isArray(analysis.improvements) && analysis.improvements.length > 0 
-      ? analysis.improvements 
-      : ['Tailor the summary to target roles', 'Add stronger action verbs', 'Quantify accomplishments'],
-    recommendedRoles: Array.isArray(analysis.recommendedRoles) && analysis.recommendedRoles.length > 0 
-      ? analysis.recommendedRoles 
-      : ['Professional Roles'],
-    summary: typeof analysis.summary === 'string' && analysis.summary.trim().length > 0 
-      ? analysis.summary 
-      : 'Resume analyzed successfully. Review the sections below for detailed insights.',
-    tailoredResume: typeof analysis.tailoredResume === 'string' && analysis.tailoredResume.trim().length > 0 
-      ? analysis.tailoredResume 
-      : 'No tailored resume available',
+    strengths: cleanList(analysis.strengths, ['Clear professional profile', 'Extractable resume content']),
+    weaknesses: cleanList(analysis.weaknesses, ['Consider adding measurable impact metrics', 'Strengthen bullet point descriptions']),
+    missingSkills: cleanList(analysis.missingSkills, ['Quantifiable achievements', 'Project-specific technical details']),
+    improvements: cleanList(analysis.improvements, ['Tailor the summary to target roles', 'Add stronger action verbs', 'Quantify accomplishments']),
+    recommendedRoles: cleanList(analysis.recommendedRoles, ['Professional Roles']),
+    summary: safeSummary,
+    tailoredResume: typeof analysis.tailoredResume === 'string' ? analysis.tailoredResume.trim() : '',
+  };
+
+  const fallbackDraft = buildFallbackTailoredResume(safeAnalysis);
+  const safeDraft = safeAnalysis.tailoredResume && !looksLikeInvalidDraft(safeAnalysis.tailoredResume)
+    ? safeAnalysis.tailoredResume
+    : fallbackDraft;
+
+  return {
+    ...safeAnalysis,
+    tailoredResume: safeDraft,
   };
 }
 
@@ -284,7 +349,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
         <div className="lg:col-span-8 flex flex-col gap-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
             <Card delay={0.4} icon={CheckCircle} title="Key Strengths" iconColor="from-emerald-400 to-teal-500">
-              <ScrollArea className="h-48 pr-4 -mr-4">
+              <ScrollArea className="h-48 pr-4 -mr-4" type="always">
                 <ul className="space-y-4">
                   {strengths.map((strength, index) => (
                     <li key={index} className="flex items-start gap-3 group/item">
@@ -299,7 +364,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
             </Card>
 
             <Card delay={0.5} icon={AlertTriangle} title="Improvement Areas" iconColor="from-amber-400 to-orange-500">
-              <ScrollArea className="h-48 pr-4 -mr-4">
+              <ScrollArea className="h-48 pr-4 -mr-4" type="always">
                 <ul className="space-y-4">
                   {weaknesses.map((weakness, index) => (
                     <li key={index} className="flex items-start gap-3 group/item">
@@ -343,7 +408,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
                 </div>
                 Actionable Next Steps
               </h2>
-              <ScrollArea className="h-64 pr-4 -mr-4">
+              <ScrollArea className="h-64 pr-4 -mr-4" type="always">
                 <ul className="space-y-6 pt-2">
                   {improvements.map((improvement, index) => (
                     <li key={index} className="flex items-start gap-4">
@@ -416,7 +481,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
 
           <Separator className="mb-6" />
 
-          <ScrollArea className="h-[32rem] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 focus-within:border-indigo-500/50 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all">
+          <ScrollArea className="h-[32rem] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 focus-within:border-indigo-500/50 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all" type="always">
             <textarea
               ref={textareaRef}
               value={editableResume}
