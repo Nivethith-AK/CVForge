@@ -19,7 +19,7 @@ import type { PreparedPdfUpload } from './hooks/usePdfUpload';
 
 async function extractTextLocallyFromPdf(file: File): Promise<string> {
   if (pdfjsLib?.GlobalWorkerOptions) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.min.js', import.meta.url).toString();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
   const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   const doc = await loadingTask.promise;
