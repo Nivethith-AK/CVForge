@@ -349,32 +349,38 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
         <div className="lg:col-span-8 flex flex-col gap-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
             <Card delay={0.4} icon={CheckCircle} title="Key Strengths" iconColor="from-emerald-400 to-teal-500">
-              <ScrollArea className="h-48 pr-4 -mr-4" type="always">
-                <ul className="space-y-4">
+              <ScrollArea className="h-48 rounded-2xl border border-slate-200 dark:border-slate-800" type="always">
+                <div className="p-4">
                   {strengths.map((strength, index) => (
-                    <li key={index} className="flex items-start gap-3 group/item">
-                      <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5 group-hover/item:scale-110 transition-transform">
-                        <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                    <React.Fragment key={index}>
+                      <div className="flex items-start gap-3 group/item">
+                        <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5 group-hover/item:scale-110 transition-transform">
+                          <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{strength}</p>
                       </div>
-                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{strength}</p>
-                    </li>
+                      {index < strengths.length - 1 && <Separator className="my-3" />}
+                    </React.Fragment>
                   ))}
-                </ul>
+                </div>
               </ScrollArea>
             </Card>
 
             <Card delay={0.5} icon={AlertTriangle} title="Improvement Areas" iconColor="from-amber-400 to-orange-500">
-              <ScrollArea className="h-48 pr-4 -mr-4" type="always">
-                <ul className="space-y-4">
+              <ScrollArea className="h-48 rounded-2xl border border-slate-200 dark:border-slate-800" type="always">
+                <div className="p-4">
                   {weaknesses.map((weakness, index) => (
-                    <li key={index} className="flex items-start gap-3 group/item">
-                      <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5 group-hover/item:scale-110 transition-transform">
-                        <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                    <React.Fragment key={index}>
+                      <div className="flex items-start gap-3 group/item">
+                        <div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5 group-hover/item:scale-110 transition-transform">
+                          <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{weakness}</p>
                       </div>
-                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{weakness}</p>
-                    </li>
+                      {index < weaknesses.length - 1 && <Separator className="my-3" />}
+                    </React.Fragment>
                   ))}
-                </ul>
+                </div>
               </ScrollArea>
             </Card>
 
@@ -408,17 +414,20 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
                 </div>
                 Actionable Next Steps
               </h2>
-              <ScrollArea className="h-64 pr-4 -mr-4" type="always">
-                <ul className="space-y-6 pt-2">
+              <ScrollArea className="h-64 rounded-2xl border border-blue-100 dark:border-indigo-500/20" type="always">
+                <div className="p-4">
                   {improvements.map((improvement, index) => (
-                    <li key={index} className="flex items-start gap-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 text-sm font-black shrink-0 mt-0.5">
-                        {index + 1}
+                    <React.Fragment key={index}>
+                      <div className="flex items-start gap-4">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 text-sm font-black shrink-0 mt-0.5">
+                          {index + 1}
+                        </div>
+                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium pt-1">{improvement}</p>
                       </div>
-                      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium pt-1">{improvement}</p>
-                    </li>
+                      {index < improvements.length - 1 && <Separator className="my-4" />}
+                    </React.Fragment>
                   ))}
-                </ul>
+                </div>
               </ScrollArea>
             </motion.div>
           </div>
