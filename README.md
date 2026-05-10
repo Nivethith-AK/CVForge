@@ -1,6 +1,6 @@
 # 🚀 CVForge: AI-Powered Resume Intelligence
 
-![CVForge Homepage](.public/homepage.png)
+![CVForge Homepage](./public/homepage.png)
 
 **CVForge** is a state-of-the-art Resume Analyzer and ATS (Applicant Tracking System) simulation platform. Built for modern job seekers, it leverages Google's Gemini AI to provide deep semantic insights into your resume, helping you bridge the gap between your experience and your dream job.
 
