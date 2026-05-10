@@ -30,11 +30,16 @@ async function startServer() {
   
   // Health check for Vercel
   app.get('/api/health', (req, res) => {
+    const rawKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+    const cleanKey = rawKey?.trim().replace(/^["']|["']$/g, '');
+    
     res.json({ 
       status: 'ok', 
       env: {
-        hasOpenRouterKey: !!process.env.OPENROUTER_API_KEY,
-        hasGeminiKey: !!process.env.GEMINI_API_KEY,
+        hasRawKey: !!rawKey,
+        keyLength: rawKey?.length || 0,
+        keyStartsWithSk: rawKey?.startsWith('sk-') || false,
+        keyHasQuotes: rawKey ? /^["']|["']$/.test(rawKey) : false,
         nodeEnv: process.env.NODE_ENV,
         isVercel: !!process.env.VERCEL
       }
@@ -200,7 +205,13 @@ ${text}
         return;
       }
 
-      const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+      let apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+      
+      // Defensive trimming of quotes (common when copy-pasted from .env into Vercel UI)
+      if (apiKey) {
+        apiKey = apiKey.trim().replace(/^["']|["']$/g, '');
+      }
+
       if (!apiKey) {
         console.error('CRITICAL: API key missing in environment variables.');
         res.status(500).json({ error: 'Server API key is not configured in Vercel environment variables.' });
@@ -298,7 +309,11 @@ ${text}
         return;
       }
 
-      const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+      let apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+      if (apiKey) {
+        apiKey = apiKey.trim().replace(/^["']|["']$/g, '');
+      }
+      
       if (!apiKey) {
         res.status(500).json({ error: 'Server API key is not configured.' });
         return;
