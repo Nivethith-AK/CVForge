@@ -32,6 +32,7 @@ export function Navbar({ onHomeClick }: NavbarProps) {
     }
   };
 
+  return (
     <nav className="h-[64px] border-b border-black/10 dark:border-white/10 bg-white/40 dark:bg-black/40 backdrop-blur-xl flex items-center justify-between px-4 sm:px-8 relative z-10 w-full transition-colors duration-300">
       <motion.button 
         onClick={onHomeClick}

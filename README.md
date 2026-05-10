@@ -1,58 +1,90 @@
-# ResumeAI - AI Resume Analyzer
+# 🚀 CVForge: AI-Powered Resume Intelligence
 
-An advanced, production-ready AI Resume Analyzer built for modern job seekers. Upload your resume, and let our ATS simulation and Gemini AI model analyze your strengths, weaknesses, missing skills, and provide actionable improvement strategies.
+![CVForge Homepage](./homepage.png)
 
-## ✨ Features
+**CVForge** is a state-of-the-art Resume Analyzer and ATS (Applicant Tracking System) simulation platform. Built for modern job seekers, it leverages Google's Gemini AI to provide deep semantic insights into your resume, helping you bridge the gap between your experience and your dream job.
 
-- **Instant Parsing**: Securely parses PDF resumes locally using an Express backend and `pdf-parse`.
-- **AI-Powered Insights**: Integrates with Google's state-of-the-art **Gemini 3.1 Pro** API to perform deep semantic analysis.
-- **ATS Compatibility Score**: Gives you a simulated ATS score out of 100.
-- **Actionable Feedback**: Highlights key strengths, pinpoints weaknesses, identifies missing skills based on your industry, and offers concrete improvement suggestions.
-- **Job Role Recommendations**: Recommends best-fit job roles based on your experience.
-- **Beautiful Modern UI**: Built with React, Tailwind CSS, and Framer Motion. Features a dark SaaS aesthetic with glassmorphism, animated gradients, and circular progress indicators.
+---
+
+## ✨ Key Features
+
+### 📊 Precision ATS Scoring
+Get an instant, data-driven score out of 100 based on simulated ATS algorithms. Understand exactly how a machine sees your resume before it ever reaches a human recruiter.
+
+### 🧠 Semantic Analysis via Gemini AI
+Unlike basic keyword scanners, CVForge uses **Google Gemini** to perform deep semantic analysis. It understands your professional narrative, the impact of your achievements, and the nuance of your experience.
+
+### 🎯 Skill Gap Detection
+CVForge identifies technical and soft skills commonly found in your target roles that are missing from your profile, providing a roadmap for upskilling.
+
+### ✍️ AI-Driven Tailored Drafts
+Receive a fully reformatted, ATS-optimized version of your resume draft. Edit it in real-time with our custom-built editor and export it directly to PDF.
+
+### 🔒 Privacy-First Architecture
+Your data is yours. CVForge processes all documents in-memory on a secure backend. No resumes are ever stored in databases or persistent storage.
+
+---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Framer Motion, Lucide React
-- **Backend / Serve**: Express.js, Vite Middleware
-- **AI / Parsing**: Google Gemini API (`@google/genai`), Multer (file upload), `pdf-parse`
-- **Architecture**: Separated Frontend/Backend handling for secure file parsing before sending text safely to the client to query Gemini.
+- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Framer Motion
+- **UI Components**: Radix UI (ScrollArea, Separator), Lucide React
+- **Backend**: Node.js, Express, Multer
+- **AI Engine**: Google Gemini API (via OpenRouter)
+- **PDF Processing**: `pdf-parse` (TypeScript Edition)
+- **Export**: jsPDF
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js 22.x or later
-- Gemini API Key
+- An OpenRouter or Gemini API Key
 
 ### Installation
 
-1. Copy `.env.example` to `.env` and add your Gemini API Key:
+1. **Clone the repository:**
    ```bash
-   cp .env.example .env
+   git clone https://github.com/Nivethith-AK/CVForge.git
+   cd CVForge
    ```
-   *Edit `.env` to include:*
-   `GEMINI_API_KEY="your-gemini-api-key"`
 
-2. Install dependencies:
+2. **Configure Environment Variables:**
+   Create a `.env` file in the root directory:
+   ```env
+   GEMINI_API_KEY="your_api_key_here"
+   PORT=3001
+   ```
+
+3. **Install Dependencies:**
    ```bash
    npm install
    ```
 
-3. Run the application:
+4. **Launch Development Server:**
    ```bash
    npm run dev
    ```
 
-## 📂 Folder Structure
+5. **Open the App:**
+   Navigate to [http://localhost:3001](http://localhost:3001) in your browser.
 
-- `/src/components/` - Reusable UI elements, including `Dashboard` and `UploadSection`.
-- `/src/lib/` - Utilities such as the `cn` class merger.
-- `/src/services/` - Contains `geminiService.ts` to handle asynchronous API calls.
-- `/server.ts` - Express backend for memory-storage PDF parsing and Vite middleware.
+---
 
-## 🔒 Privacy
+## 📂 Project Structure
 
-Resumes are processed entirely in memory on the backend (`multer.memoryStorage()`) and are not saved to any database. Extracted text is then transmitted securely directly to the Gemini API.
+- `src/components/` - High-performance UI components.
+- `src/services/` - Gemini AI streaming integration.
+- `src/hooks/` - Custom React hooks for PDF handling.
+- `server.ts` - Express server with Vite middleware integration.
+
+---
 
 ## 📄 License
-MIT
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+Built with ❤️ by Nivethith-AK.

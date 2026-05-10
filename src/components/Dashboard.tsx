@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import type { ResumeAnalysis } from '@/src/types/resume';
 import { jsPDF } from 'jspdf';
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { ScrollArea } from '@/src/components/ui/scroll-area';
+import { Separator } from '@/src/components/ui/separator';
 
 interface DashboardProps {
   analysis: ResumeAnalysis;
@@ -26,6 +27,19 @@ interface DashboardProps {
 export function Dashboard({ analysis, onReset }: DashboardProps) {
   const [editableResume, setEditableResume] = useState(analysis.tailoredResume);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [editableResume]);
 
   useEffect(() => {
     setEditableResume(analysis.tailoredResume);
@@ -366,14 +380,17 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
             </div>
           </div>
 
-          <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 focus-within:border-indigo-500/50 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all">
+          <Separator className="mb-6" />
+
+          <ScrollArea className="h-[32rem] rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 focus-within:border-indigo-500/50 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all">
             <textarea
+              ref={textareaRef}
               value={editableResume}
               onChange={(event) => setEditableResume(event.target.value)}
-              className="w-full min-h-[32rem] bg-transparent text-slate-900 dark:text-slate-200 text-[13px] leading-relaxed font-mono p-4 sm:p-6 outline-none resize-y"
+              className="w-full bg-transparent text-slate-900 dark:text-slate-200 text-[13px] leading-relaxed font-mono p-4 sm:p-6 outline-none resize-none overflow-hidden"
               spellCheck={false}
             />
-          </div>
+          </ScrollArea>
         </motion.div>
       </div>
     </motion.div>

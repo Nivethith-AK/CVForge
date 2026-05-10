@@ -6,7 +6,7 @@ import multer from 'multer';
 import { PDFParse } from 'pdf-parse';
 
 const app = express();
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 3001);
 
 // Setup Multer for parsing multipart/form-data
 const storage = multer.memoryStorage();
@@ -330,15 +330,15 @@ ${text}
 
   // API Route to parse PDF
   app.post('/api/parse-pdf', upload.single('resume'), async (req, res) => {
+    let parser: PDFParse | undefined;
     try {
       if (!req.file) {
         res.status(400).json({ error: 'No file uploaded' });
         return;
       }
 
-      const parser = new PDFParse({ data: req.file.buffer });
+      parser = new PDFParse({ data: req.file.buffer });
       const pdfData = await parser.getText();
-      await parser.destroy();
 
       if (!pdfData || !pdfData.text) {
         res.status(400).json({ error: 'Could not extract text from PDF' });
@@ -349,6 +349,10 @@ ${text}
     } catch (error) {
       console.error('Error parsing PDF:', error);
       res.status(500).json({ error: 'Failed to process the PDF document.' });
+    } finally {
+      if (parser) {
+        await parser.destroy();
+      }
     }
   });
 
