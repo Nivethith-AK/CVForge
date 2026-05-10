@@ -120,8 +120,17 @@ function extractJsonObject(text: string) {
 // PDF Extraction Logic using pdf-parse (as requested)
 export async function extractTextFromPDF(buffer: Buffer) {
   try {
-    const module = await import('pdf-parse');
-    const PDFParseCtor = (module as any).PDFParse;
+    // Prefer the node-targeted build to avoid browser-only globals (e.g. DOMMatrix)
+    // that can crash in serverless runtimes.
+    let module: any;
+    try {
+      const nodeBuildEntry = 'pdf-parse/dist/node/esm/index.js';
+      module = await import(nodeBuildEntry);
+    } catch {
+      module = await import('pdf-parse');
+    }
+
+    const PDFParseCtor = module?.PDFParse;
 
     if (typeof PDFParseCtor === 'function') {
       const parser = new PDFParseCtor({ data: buffer });
@@ -132,7 +141,7 @@ export async function extractTextFromPDF(buffer: Buffer) {
       return data.text;
     }
 
-    const fallback = (module as any).default;
+    const fallback = module?.default;
     if (typeof fallback === 'function') {
       const data = await fallback(buffer);
       return data?.text || '';
