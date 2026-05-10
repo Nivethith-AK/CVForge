@@ -14,6 +14,10 @@
 
 📍 **[Live Demo](https://cvforge-lake.vercel.app/)** • 📚 [Features](#-key-features) • 🛠️ [Tech Stack](#-tech-stack) • 🚀 [Setup](#-getting-started) • 📖 [API Docs](#-api-documentation)
 
+---
+
+![CVForge Homepage](./public/homepage.png)
+
 </div>
 
 ---
