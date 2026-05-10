@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import type { ResumeAnalysis } from '@/src/types/resume';
-import { jsPDF } from 'jspdf';
 import {
   CheckCircle,
   AlertTriangle,
@@ -12,7 +11,6 @@ import {
   FileText,
   RotateCcw,
   Copy,
-  Download,
   PencilLine,
   Sparkles,
 } from 'lucide-react';
@@ -194,163 +192,6 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
   ]);
 
   const isSectionTitle = (line: string) => sectionTitles.has(line.trim().replace(/:$/, '').toLowerCase());
-
-  const downloadResumePdf = () => {
-    const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 48;
-    const contentWidth = pageWidth - margin * 2;
-    const lineHeight = 15;
-    const sectionGap = 14;
-    const bulletIndent = 14;
-    const headerTitleSize = 20;
-    const headerBodySize = 10;
-    const footerReserve = 56;
-    const headerBottomSpacing = 20;
-    const exportTimestamp = new Date().toLocaleDateString();
-
-    let cursorY = margin;
-    let hasSeenFirstSection = false;
-    let pageNumber = 1;
-
-    const addFooter = () => {
-      const footerY = pageHeight - 28;
-      pdf.setDrawColor(226, 232, 240);
-      pdf.setLineWidth(0.6);
-      pdf.line(margin, footerY - 10, pageWidth - margin, footerY - 10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      pdf.setTextColor(100, 116, 139);
-      pdf.text('Tailored resume export', margin, footerY);
-      pdf.text(`Page ${pageNumber}`, pageWidth - margin, footerY, { align: 'right' });
-    };
-
-    const addHeader = () => {
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(headerTitleSize);
-      pdf.setTextColor(15, 23, 42);
-      pdf.text('Tailored Resume', margin, cursorY);
-
-      cursorY += 16;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(headerBodySize);
-      pdf.setTextColor(71, 85, 105);
-      pdf.text('Generated from the current editable draft', margin, cursorY);
-      pdf.text(exportTimestamp, pageWidth - margin, cursorY, { align: 'right' });
-
-      cursorY += 18;
-      pdf.setDrawColor(203, 213, 225);
-      pdf.setLineWidth(1);
-      pdf.line(margin, cursorY, pageWidth - margin, cursorY);
-      cursorY += headerBottomSpacing;
-    };
-
-    const ensureSpace = (heightNeeded: number) => {
-      if (cursorY + heightNeeded > pageHeight - margin - footerReserve) {
-        addFooter();
-        pdf.addPage();
-        pageNumber += 1;
-        cursorY = margin;
-        addHeader();
-      }
-    };
-
-    const drawSectionDivider = () => {
-      ensureSpace(12);
-      pdf.setDrawColor(203, 213, 225);
-      pdf.setLineWidth(0.8);
-      pdf.line(margin, cursorY + 3, pageWidth - margin, cursorY + 3);
-      cursorY += 10;
-    };
-
-    const isContactLine = (line: string) =>
-      line.includes('|') || line.includes('@') || /^\+?[\d\s()-]+$/.test(line);
-
-    const drawParagraph = (text: string, options?: { bold?: boolean; size?: number; color?: [number, number, number]; indent?: number; gapAfter?: number }) => {
-      const size = options?.size ?? 11;
-      const indent = options?.indent ?? 0;
-      const gapAfter = options?.gapAfter ?? 0;
-      const wrappedLines = pdf.splitTextToSize(text, contentWidth - indent);
-      ensureSpace(wrappedLines.length * lineHeight + gapAfter);
-      pdf.setFont('helvetica', options?.bold ? 'bold' : 'normal');
-      pdf.setFontSize(size);
-      pdf.setTextColor(...(options?.color ?? [30, 41, 59]));
-      pdf.text(wrappedLines, margin + indent, cursorY);
-      cursorY += wrappedLines.length * lineHeight + gapAfter;
-    };
-
-    const drawBullet = (text: string) => {
-      const normalizedText = text.replace(/^[-•]\s*/, '');
-      const bulletPrefixWidth = 10;
-      const wrappedLines = pdf.splitTextToSize(normalizedText, contentWidth - bulletIndent - bulletPrefixWidth);
-      ensureSpace(wrappedLines.length * lineHeight);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(11);
-      pdf.setTextColor(30, 41, 59);
-      pdf.text('•', margin + bulletIndent, cursorY);
-      pdf.text(wrappedLines, margin + bulletIndent + bulletPrefixWidth, cursorY);
-      cursorY += wrappedLines.length * lineHeight;
-    };
-
-    addHeader();
-
-    const lines = editableResume.split(/\r?\n/);
-    let renderedName = false;
-
-    lines.forEach((rawLine: string) => {
-      const line = rawLine.trim();
-
-      if (!line) {
-        cursorY += hasSeenFirstSection ? 6 : 4;
-        return;
-      }
-
-      if (!renderedName && !isSectionTitle(line) && !line.startsWith('-') && !line.startsWith('•')) {
-        drawParagraph(line, { bold: true, size: 18, color: [15, 23, 42], gapAfter: 2 });
-        drawSectionDivider();
-        renderedName = true;
-        return;
-      }
-
-      if (!hasSeenFirstSection && isContactLine(line)) {
-        drawParagraph(line, { size: 10, color: [71, 85, 105] });
-        return;
-      }
-
-      if (isSectionTitle(line)) {
-        hasSeenFirstSection = true;
-        cursorY += sectionGap;
-        drawParagraph(line.toUpperCase(), { bold: true, size: 11, color: [15, 118, 110] });
-        drawSectionDivider();
-        return;
-      }
-
-      if (line.startsWith('-') || line.startsWith('•')) {
-        drawBullet(line);
-        return;
-      }
-
-      if (isContactLine(line)) {
-        drawParagraph(line, { size: 10, color: [71, 85, 105] });
-        return;
-      }
-
-      drawParagraph(line, { size: 11, color: [30, 41, 59] });
-    });
-
-    addFooter();
-
-    const pdfBlob = pdf.output('blob');
-    const downloadUrl = URL.createObjectURL(pdfBlob);
-    const anchor = document.createElement('a');
-    anchor.href = downloadUrl;
-    anchor.download = 'tailored-resume.pdf';
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(downloadUrl);
-  };
 
   const handleCopyDraft = async () => {
     await navigator.clipboard.writeText(editableResume);
@@ -546,7 +387,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
                 Tailored Resume Draft
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
-                Our AI has automatically formatted your experience. Edit freely, then export.
+                Our AI has automatically formatted your experience. Edit freely.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -569,16 +410,6 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
               >
                 <Copy className="w-4 h-4" />
                 Copy Text
-              </motion.button>
-              <motion.button
-                type="button"
-                onClick={downloadResumePdf}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-sm font-semibold text-white transition-all shadow-lg shadow-blue-500/25"
-              >
-                <Download className="w-4 h-4" />
-                Export PDF
               </motion.button>
             </div>
           </div>
