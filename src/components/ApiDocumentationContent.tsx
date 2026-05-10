@@ -6,6 +6,17 @@ export function ApiDocumentationContent() {
       <section>
         <h3 className="text-slate-900 dark:text-white font-semibold mb-2 text-lg transition-colors duration-300">API Documentation</h3>
         <p>CVForge provides REST API endpoints for PDF parsing and AI-powered resume analysis.</p>
+        <p className="mt-2">
+          Repository:{' '}
+          <a
+            href="https://github.com/Nivethith-AK/CVForge"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            github.com/Nivethith-AK/CVForge
+          </a>
+        </p>
       </section>
 
       <Separator />

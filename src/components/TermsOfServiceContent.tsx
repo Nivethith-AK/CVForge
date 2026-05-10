@@ -13,7 +13,7 @@ export function TermsOfServiceContent() {
       <section>
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">1. Acceptance of Terms</h4>
         <p>
-          By accessing and using CVForge, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+          By accessing and using CVForge, you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree, please do not use this service.
         </p>
       </section>
 
@@ -84,6 +84,23 @@ export function TermsOfServiceContent() {
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">8. Governing Law</h4>
         <p>
           These terms are governed by applicable local laws based on the operator's jurisdiction.
+        </p>
+      </section>
+
+      <Separator />
+
+      <section>
+        <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">9. Project Repository</h4>
+        <p>
+          Official repository:{' '}
+          <a
+            href="https://github.com/Nivethith-AK/CVForge"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            github.com/Nivethith-AK/CVForge
+          </a>
         </p>
       </section>
     </div>

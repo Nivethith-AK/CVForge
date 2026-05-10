@@ -67,7 +67,15 @@ export function PrivacyPolicyContent() {
       <section>
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">6. Contact Us</h4>
         <p>
-          If you have questions about this Privacy Policy, contact us using the social links available in the site footer.
+          If you have questions about this Privacy Policy, contact us using the social links in the site footer or visit the official CVForge repository:{' '}
+          <a
+            href="https://github.com/Nivethith-AK/CVForge"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            github.com/Nivethith-AK/CVForge
+          </a>
         </p>
       </section>
     </div>
