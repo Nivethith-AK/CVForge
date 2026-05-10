@@ -40,7 +40,7 @@ Get AI-powered role suggestions tailored to your experience level and skill prof
 Receive a reformatted, ATS-optimized resume draft powered by Gemini:
 - Intelligent restructuring for maximum ATS compatibility
 - Professional formatting with impact-driven language
-- Live editable textarea with real-time PDF export
+- Live editable textarea with copy-to-clipboard support
 - Copy-to-clipboard functionality for quick integration
 
 ### 📥 **Smart PDF Upload**
@@ -106,7 +106,6 @@ Receive a reformatted, ATS-optimized resume draft powered by Gemini:
 | **Animations** | Framer Motion (Motion) | 12.23 | Smooth transitions |
 | **UI Components** | Radix UI | Latest | Accessible components |
 | **Icons** | Lucide React | 0.546 | Icon library |
-| **PDF Export** | jsPDF | 4.2 | Client-side PDF generation |
 | **PDF Parsing** | pdf-parse + pdfjs-dist | 2.4 + 3.11 | Dual extraction strategy |
 | **Backend** | Node.js Express | 4.21 | REST API server |
 | **Upload Handler** | Multer | 2.1 | File upload middleware |
@@ -150,10 +149,10 @@ Receive a reformatted, ATS-optimized resume draft powered by Gemini:
 - Frontend validates output (detects model refusals)
 - Fallback resume generator activates if needed
 
-### Step 6: Dashboard Display & Export
+### Step 6: Dashboard Display & Editing
 - Animated ATS score circle with gradient
 - Comprehensive analysis cards (strengths, improvements, next steps)
-- Editable tailored resume with copy/PDF export buttons
+- Editable tailored resume with copy-to-clipboard controls
 - Real-time editing with auto-height textarea
 
 ---
