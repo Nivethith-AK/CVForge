@@ -447,8 +447,8 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <div align="center">
 
-Built with ❤️ by **Nivethith-AK**
+Built with ❤️ by **Nivethith-AK**  
 
-[GitHub](https://github.com/Nivethith-AK) • [LinkedIn](https://linkedin.com/in/your-profile)
+[GitHub](https://github.com/Nivethith-AK) • [LinkedIn](https://linkedin.com/in/Nivethith-AK)
 
 </div>
