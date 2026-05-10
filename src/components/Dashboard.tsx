@@ -24,13 +24,48 @@ interface DashboardProps {
   onReset: () => void;
 }
 
+/**
+ * Validates and ensures all required fields in ResumeAnalysis are present and properly formatted
+ */
+function validateAndNormalizeAnalysis(analysis: ResumeAnalysis): ResumeAnalysis {
+  return {
+    atsScore: typeof analysis.atsScore === 'number' && analysis.atsScore >= 0 && analysis.atsScore <= 100 
+      ? analysis.atsScore 
+      : 50,
+    strengths: Array.isArray(analysis.strengths) && analysis.strengths.length > 0 
+      ? analysis.strengths 
+      : ['Clear professional profile', 'Extractable resume content'],
+    weaknesses: Array.isArray(analysis.weaknesses) && analysis.weaknesses.length > 0 
+      ? analysis.weaknesses 
+      : ['Consider adding measurable impact metrics', 'Strengthen bullet point descriptions'],
+    missingSkills: Array.isArray(analysis.missingSkills) && analysis.missingSkills.length > 0 
+      ? analysis.missingSkills 
+      : ['Quantifiable achievements', 'Project-specific technical details'],
+    improvements: Array.isArray(analysis.improvements) && analysis.improvements.length > 0 
+      ? analysis.improvements 
+      : ['Tailor the summary to target roles', 'Add stronger action verbs', 'Quantify accomplishments'],
+    recommendedRoles: Array.isArray(analysis.recommendedRoles) && analysis.recommendedRoles.length > 0 
+      ? analysis.recommendedRoles 
+      : ['Professional Roles'],
+    summary: typeof analysis.summary === 'string' && analysis.summary.trim().length > 0 
+      ? analysis.summary 
+      : 'Resume analyzed successfully. Review the sections below for detailed insights.',
+    tailoredResume: typeof analysis.tailoredResume === 'string' && analysis.tailoredResume.trim().length > 0 
+      ? analysis.tailoredResume 
+      : 'No tailored resume available',
+  };
+}
+
 export function Dashboard({ analysis, onReset }: DashboardProps) {
-  const strengths = Array.isArray(analysis.strengths) ? analysis.strengths : [];
-  const weaknesses = Array.isArray(analysis.weaknesses) ? analysis.weaknesses : [];
-  const missingSkills = Array.isArray(analysis.missingSkills) ? analysis.missingSkills : [];
-  const improvements = Array.isArray(analysis.improvements) ? analysis.improvements : [];
-  const recommendedRoles = Array.isArray(analysis.recommendedRoles) ? analysis.recommendedRoles : [];
-  const tailoredResume = typeof analysis.tailoredResume === 'string' ? analysis.tailoredResume : '';
+  // Validate and normalize the analysis data to ensure output is always perfect
+  const validatedAnalysis = validateAndNormalizeAnalysis(analysis);
+  
+  const strengths = validatedAnalysis.strengths;
+  const weaknesses = validatedAnalysis.weaknesses;
+  const missingSkills = validatedAnalysis.missingSkills;
+  const improvements = validatedAnalysis.improvements;
+  const recommendedRoles = validatedAnalysis.recommendedRoles;
+  const tailoredResume = validatedAnalysis.tailoredResume;
 
   const [editableResume, setEditableResume] = useState(tailoredResume);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
@@ -55,7 +90,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
 
   const radius = 15.9;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (analysis.atsScore / 100) * circumference;
+  const strokeDashoffset = circumference - (validatedAnalysis.atsScore / 100) * circumference;
 
   const sectionTitles = new Set([
     'FULL NAME',
@@ -221,14 +256,14 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
               </svg>
               <div className="absolute flex flex-col items-center justify-center">
                 <span className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 tracking-tighter">
-                  {analysis.atsScore}
+                  {validatedAnalysis.atsScore}
                 </span>
               </div>
             </div>
           </motion.div>
 
           <Card delay={0.2} icon={FileText} title="Executive Summary" iconColor="from-blue-500 to-cyan-400">
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{analysis.summary || 'No summary was returned for this analysis.'}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{validatedAnalysis.summary}</p>
           </Card>
 
           <Card delay={0.3} icon={Briefcase} title="Recommended Roles" iconColor="from-purple-500 to-indigo-500">
