@@ -5,6 +5,19 @@ import path from 'path';
 import multer from 'multer';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 
+// Polyfills for Node.js environment (required for some pdfjs-dist versions)
+if (typeof global !== 'undefined' && !(global as any).DOMMatrix) {
+  (global as any).DOMMatrix = class DOMMatrix {
+    a=1; b=0; c=0; d=1; e=0; f=0;
+    constructor() {}
+    static fromFloat32Array() { return new DOMMatrix(); }
+    static fromFloat64Array() { return new DOMMatrix(); }
+  };
+}
+if (typeof global !== 'undefined' && !(global as any).Image) {
+  (global as any).Image = class Image {};
+}
+
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 
@@ -14,6 +27,19 @@ const upload = multer({ storage });
 
 async function startServer() {
   app.use(express.json());
+  
+  // Health check for Vercel
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      env: {
+        hasOpenRouterKey: !!process.env.OPENROUTER_API_KEY,
+        hasGeminiKey: !!process.env.GEMINI_API_KEY,
+        nodeEnv: process.env.NODE_ENV,
+        isVercel: !!process.env.VERCEL
+      }
+    });
+  });
 
   async function callOpenRouter(apiKey: string, messages: Array<{ role: string; content: string }>) {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -176,7 +202,8 @@ ${text}
 
       const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        res.status(500).json({ error: 'Server API key is not configured.' });
+        console.error('CRITICAL: API key missing in environment variables.');
+        res.status(500).json({ error: 'Server API key is not configured in Vercel environment variables.' });
         return;
       }
 
@@ -341,10 +368,15 @@ ${text}
       console.log('File size:', req.file.size, 'bytes');
 
       // Set worker src for Node.js
-      // @ts-ignore
       if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        // @ts-ignore
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.js';
+        try {
+          // Use a more robust path resolution for Vercel
+          const workerPath = path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.js');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerPath;
+          console.log('Worker path set to:', workerPath);
+        } catch (e) {
+          console.error('Failed to set worker path:', e);
+        }
       }
 
       const data = new Uint8Array(req.file.buffer);
