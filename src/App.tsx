@@ -13,16 +13,15 @@ import { PrivacyPolicyContent } from './components/PrivacyPolicyContent';
 import { TermsOfServiceContent } from './components/TermsOfServiceContent';
 import { ApiDocumentationContent } from './components/ApiDocumentationContent';
 import { analyzeResumeStream } from './services/geminiService';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.js';
 import type { ResumeAnalysis } from './types/resume';
 import type { PreparedPdfUpload } from './hooks/usePdfUpload';
 
 async function extractTextLocallyFromPdf(file: File): Promise<string> {
-  const pdfjsEntry: string = 'pdfjs-dist/legacy/build/pdf.mjs';
-  const pdfjs = await import(pdfjsEntry);
-  if (pdfjs?.GlobalWorkerOptions) {
-    pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.mjs', import.meta.url).toString();
+  if (pdfjsLib?.GlobalWorkerOptions) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.min.js', import.meta.url).toString();
   }
-  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   const doc = await loadingTask.promise;
 
   const pages: string[] = [];
