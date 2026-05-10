@@ -22,14 +22,13 @@ export function TermsOfServiceContent() {
       <section>
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">2. Use License</h4>
         <p>
-          Permission is granted to temporarily download one copy of the materials (information or software) on CVForge for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
+          You are granted a limited, non-exclusive, revocable license to use CVForge for lawful personal or business resume-improvement use. Under this license, you may not:
         </p>
         <ul className="list-disc list-inside ml-2 space-y-1 mt-2">
-          <li>Modify or copy the materials</li>
-          <li>Use the materials for any commercial purpose or for any public display</li>
-          <li>Attempt to decompile or reverse engineer any software</li>
-          <li>Remove any copyright or proprietary notations</li>
-          <li>Transfer the materials to another person</li>
+          <li>Use the service to upload unlawful, abusive, or malicious content</li>
+          <li>Attempt to disrupt, overload, or compromise platform security</li>
+          <li>Reverse engineer or attempt unauthorized access to internal systems</li>
+          <li>Misrepresent ownership of generated or analyzed content</li>
           <li>Upload or transmit viruses or any other malicious code</li>
         </ul>
       </section>
@@ -84,7 +83,7 @@ export function TermsOfServiceContent() {
       <section>
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">8. Governing Law</h4>
         <p>
-          These terms and conditions are governed by and construed in accordance with the laws of the United States, and you irrevocably submit to the exclusive jurisdiction of the courts in that location.
+          These terms are governed by applicable local laws based on the operator's jurisdiction.
         </p>
       </section>
     </div>

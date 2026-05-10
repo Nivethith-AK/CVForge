@@ -13,7 +13,7 @@ export function PrivacyPolicyContent() {
       <section>
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">1. Introduction</h4>
         <p>
-          CVForge ("we," "us," "our," or "Company") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our resume analysis service.
+          CVForge ("we," "us," or "our") respects your privacy. This Privacy Policy explains how we collect, use, and protect information when you use our resume analysis platform.
         </p>
       </section>
 
@@ -25,8 +25,8 @@ export function PrivacyPolicyContent() {
         <ul className="list-disc list-inside ml-2 space-y-1 mt-2">
           <li>PDF resume files you upload</li>
           <li>Automatically extracted resume text</li>
-          <li>Browser information and IP address</li>
-          <li>Usage statistics and performance data</li>
+          <li>Basic technical data (such as browser type and request metadata)</li>
+          <li>Usage and performance information to improve reliability</li>
         </ul>
       </section>
 
@@ -49,7 +49,7 @@ export function PrivacyPolicyContent() {
       <section>
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">4. Data Security</h4>
         <p>
-          We implement appropriate technical and organizational measures to protect your personal data against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet is 100% secure.
+          We use reasonable technical and organizational safeguards to protect data from unauthorized access, disclosure, or misuse. No internet-based service can be guaranteed as 100% secure.
         </p>
       </section>
 
@@ -58,7 +58,7 @@ export function PrivacyPolicyContent() {
       <section>
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">5. Data Retention</h4>
         <p>
-          Uploaded resumes and extracted data are processed in real-time and are not stored permanently on our servers unless explicitly saved by you.
+          Uploaded resumes and extracted text are processed to provide analysis results. We aim to avoid unnecessary long-term storage and retain data only as needed for operation, troubleshooting, and legal obligations.
         </p>
       </section>
 
@@ -67,7 +67,7 @@ export function PrivacyPolicyContent() {
       <section>
         <h4 className="text-slate-900 dark:text-white font-semibold mb-2 transition-colors duration-300">6. Contact Us</h4>
         <p>
-          If you have questions about this Privacy Policy, please contact us at privacy@cv-ai.com
+          If you have questions about this Privacy Policy, contact us using the social links available in the site footer.
         </p>
       </section>
     </div>
