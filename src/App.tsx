@@ -96,42 +96,24 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState<'privacy' | 'terms' | 'api' | null>(null);
 
-  const handleFileUpload = async (file: File, preparedUpload?: PreparedPdfUpload) => {
+  const handleFileUpload = async (file: File) => {
     setIsLoading(true);
     setError(null);
     setAnalysis(null);
     setUploadProgress(0);
 
     try {
-      // 1. Prefer frontend-extracted text (fast / avoids re-parsing). Fall back to server parsing.
-      let text: string;
-      if (preparedUpload?.extractedText) {
-        text = preparedUpload.extractedText;
-        setUploadProgress(50);
-      } else {
-        text = await parsePdfWithProgress(file, (progress) => {
-          setUploadProgress(Math.min(50, progress));
-        });
-      }
+      // 1. Upload to backend to parse PDF using the requested 'file' field and buffer logic
+      const text = await parsePdfWithProgress(file, (progress) => {
+        setUploadProgress(Math.min(50, progress));
+      });
 
       if (!text || text.trim().length === 0) {
         throw new Error('No readable text found in the PDF.');
       }
 
-        // (App-level) re-check quickly to be safe if needed — preparedUpload was already validated
-        const looksLikeResume = (txt: string) => {
-          if (!txt) return false;
-          const lower = txt.toLowerCase();
-          const keywords = ['education', 'experience', 'skills', 'summary', 'professional', 'work', 'employment', 'objective', 'contact', 'curriculum vitae', 'resume'];
-          let found = 0;
-          for (const kw of keywords) {
-            if (lower.includes(kw)) found += 1;
-          }
-          return found >= 3 || lower.includes('curriculum vitae') || lower.includes('resume');
-        };
-
-        if (!looksLikeResume(text)) {
-          throw new Error('Please upload a correct resume or CV PDF file.');
+        if (!text || text.trim().length === 0) {
+          throw new Error('No readable text found in the PDF.');
         }
 
       // 2. Send text to Gemini API with streaming progress

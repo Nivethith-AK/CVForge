@@ -13,7 +13,6 @@ export interface PreparedPdfUpload {
     type: string;
     lastModified: number;
   };
-  extractedText?: string;
 }
 
 interface UsePdfUploadState {
@@ -41,40 +40,6 @@ export function validatePdfFile(file: File): string | null {
   return null;
 }
 
-async function extractTextFromPdfArrayBuffer(arrayBuffer: ArrayBuffer): Promise<string> {
-  try {
-    const pdfjs = await import('pdfjs-dist');
-    const loadingTask = (pdfjs as any).getDocument({ data: arrayBuffer });
-    const doc = await loadingTask.promise;
-    const numPages = doc.numPages || 0;
-    let fullText = '';
-
-    for (let i = 1; i <= numPages; i++) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-      const pageText = content.items.map((it: any) => it.str).join(' ');
-      fullText += ` ${pageText}`;
-    }
-
-    return fullText.trim();
-  } catch (err) {
-    throw new Error('Failed to extract PDF text');
-  }
-}
-
-function looksLikeResume(text: string): boolean {
-  if (!text) return false;
-  const lower = text.toLowerCase();
-  const keywords = ['education', 'experience', 'skills', 'summary', 'professional', 'work', 'employment', 'objective', 'contact'];
-  let found = 0;
-  for (const kw of keywords) {
-    if (lower.includes(kw)) found += 1;
-  }
-
-  // require at least three resume-like keywords to reduce false positives
-  return found >= 3 || lower.includes('curriculum vitae') || lower.includes('resume');
-}
 
 function getDropzoneError(rejections: FileRejection[]): string {
   const firstRejection = rejections[0];
@@ -168,34 +133,6 @@ export function usePdfUpload() {
 
     try {
       const preparedUpload = await preparePdfUpload(file);
-
-      // Extract text and perform a lightweight resume check before accepting
-      let text = '';
-      try {
-        text = await extractTextFromPdfArrayBuffer(preparedUpload.arrayBuffer);
-      } catch {
-        setState((prev) => ({
-          ...prev,
-          preparedUpload: null,
-          isPreparing: false,
-          uploadError: 'Please upload a correct resume or CV PDF file.',
-        }));
-        return;
-      }
-
-      if (!looksLikeResume(text)) {
-        setState((prev) => ({
-          ...prev,
-          preparedUpload: null,
-          isPreparing: false,
-          uploadError: 'Please upload a correct resume or CV PDF file.',
-        }));
-        return;
-      }
-
-      // attach extracted text so the frontend can short-circuit server parsing
-      preparedUpload.extractedText = text;
-
       setState((prev) => ({
         ...prev,
         preparedUpload,
