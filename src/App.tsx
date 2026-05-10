@@ -37,8 +37,10 @@ function parsePdfWithProgress(
 
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
-        const payload = xhr.response as { error?: string } | null;
-        reject(new Error(payload?.error || 'Failed to parse the PDF document.'));
+        const payload = xhr.response as { error?: string, details?: string } | null;
+        const msg = payload?.error || 'Failed to parse the PDF document.';
+        const details = payload?.details ? ` (${payload.details})` : '';
+        reject(new Error(`${msg}${details}`));
         return;
       }
 

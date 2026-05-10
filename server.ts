@@ -381,6 +381,8 @@ ${text}
         data,
         useSystemFonts: true,
         disableFontFace: true,
+        disableWorker: true, // Crucial for Vercel/Serverless
+        verbosity: 0
       });
 
       const pdf = await loadingTask.promise;
@@ -412,8 +414,8 @@ ${text}
       // Return the specific error message to the client for easier debugging
       res.status(500).json({ 
         error: 'Failed to parse the PDF document.',
-        details: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: error.message || 'Unknown error during PDF processing',
+        code: error.name || 'PDF_PARSE_ERROR'
       });
     }
   });
