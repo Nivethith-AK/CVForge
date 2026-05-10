@@ -321,7 +321,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
                 ></motion.circle>
               </svg>
               <div className="absolute flex flex-col items-center justify-center">
-                <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 tracking-tighter">
+                <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-slate-900 to-slate-500 dark:from-white dark:to-slate-400 tracking-tighter leading-none">
                   {validatedAnalysis.atsScore}%
                 </div>
               </div>
@@ -350,7 +350,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
         <div className="lg:col-span-8 flex flex-col gap-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
             <Card delay={0.4} icon={CheckCircle} title="Key Strengths" iconColor="from-emerald-400 to-teal-500">
-              <ScrollArea className="h-48 rounded-md border">
+              <ScrollArea className="h-48">
                 <div className="p-4">
                   {strengths.map((strength, index) => (
                     <React.Fragment key={index}>
@@ -368,7 +368,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
             </Card>
 
             <Card delay={0.5} icon={AlertTriangle} title="Improvement Areas" iconColor="from-amber-400 to-orange-500">
-              <ScrollArea className="h-48 rounded-md border">
+              <ScrollArea className="h-48">
                 <div className="p-4">
                   {weaknesses.map((weakness, index) => (
                     <React.Fragment key={index}>
@@ -415,7 +415,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
                 </div>
                 Actionable Next Steps
               </h2>
-              <ScrollArea className="h-64 rounded-md border">
+              <ScrollArea className="h-64">
                 <div className="p-4">
                   {improvements.map((improvement, index) => (
                     <React.Fragment key={index}>
@@ -491,7 +491,7 @@ export function Dashboard({ analysis, onReset }: DashboardProps) {
 
           <Separator className="mb-6" />
 
-          <ScrollArea className="h-[32rem] rounded-md border bg-slate-50 dark:bg-slate-950/50">
+          <ScrollArea className="h-[32rem] bg-slate-50 dark:bg-slate-950/50">
             <textarea
               ref={textareaRef}
               value={editableResume}
