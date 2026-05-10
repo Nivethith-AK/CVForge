@@ -117,6 +117,22 @@ function extractJsonObject(text: string) {
   return JSON.parse(text.slice(startIndex, endIndex + 1));
 }
 
+async function ensureDomMatrixPolyfill() {
+  if (typeof (globalThis as any).DOMMatrix !== 'undefined') {
+    return;
+  }
+
+  try {
+    const domMatrixModule: any = await import('@thednp/dommatrix');
+    const DOMMatrixCtor = domMatrixModule?.default || domMatrixModule?.DOMMatrix || domMatrixModule;
+    if (DOMMatrixCtor) {
+      (globalThis as any).DOMMatrix = DOMMatrixCtor;
+    }
+  } catch (error) {
+    console.warn('DOMMatrix polyfill could not be loaded:', error);
+  }
+}
+
 async function extractWithPdfJs(buffer: Buffer): Promise<string> {
   const pdfjsEntry = 'pdfjs-dist/legacy/build/pdf.mjs';
   const pdfjs = await import(pdfjsEntry);
@@ -144,6 +160,8 @@ async function extractWithPdfJs(buffer: Buffer): Promise<string> {
 // PDF Extraction Logic using pdf-parse (as requested)
 export async function extractTextFromPDF(buffer: Buffer) {
   try {
+    await ensureDomMatrixPolyfill();
+
     try {
       const text = await extractWithPdfJs(buffer);
       if (text && text.trim().length > 0) {
