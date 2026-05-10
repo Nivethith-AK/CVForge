@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import multer from 'multer';
-import pdf from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 
 const app = express();
 app.use(express.json());
@@ -68,7 +68,9 @@ function extractJsonObject(text: string) {
 // PDF Extraction Logic using pdf-parse (as requested)
 export async function extractTextFromPDF(buffer: Buffer) {
   try {
-    const data = await pdf(buffer);
+    const parser = new PDFParse({ data: buffer });
+    const data = await parser.getText();
+    await parser.destroy();
     return data.text;
   } catch (err: any) {
     throw new Error(`pdf-parse failed: ${err.message}`);
