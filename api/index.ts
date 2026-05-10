@@ -7,6 +7,26 @@ import { PDFParse } from 'pdf-parse';
 const app = express();
 app.use(express.json());
 
+// Register process-level error handlers once per runtime.
+const globalFlag = globalThis as typeof globalThis & { __cvforgeHandlersRegistered?: boolean };
+if (!globalFlag.__cvforgeHandlersRegistered) {
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught exception in API runtime:', error);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled rejection in API runtime:', reason);
+  });
+
+  globalFlag.__cvforgeHandlersRegistered = true;
+}
+
+app.use((req, _res, next) => {
+  const requestId = Math.random().toString(36).slice(2, 10);
+  (req as any).requestId = requestId;
+  next();
+});
+
 // Setup Multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -15,18 +35,32 @@ const PORT = Number(process.env.PORT || 3001);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  const rawKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
-  res.json({ 
-    status: 'ok', 
-    isVercel: !!process.env.VERCEL,
-    hasKey: !!rawKey,
-    keyLength: rawKey?.length || 0
-  });
+  try {
+    const rawKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+    res.json({
+      status: 'ok',
+      isVercel: !!process.env.VERCEL,
+      hasKey: !!rawKey,
+      keyLength: rawKey?.length || 0,
+      nodeVersion: process.version,
+      uptimeSeconds: Math.round(process.uptime()),
+    });
+  } catch (error: any) {
+    console.error('Health route failed:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error?.message || 'Health check failed',
+    });
+  }
 });
 
 async function callOpenRouter(apiKey: string, messages: any[]) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
+
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
+    signal: controller.signal,
     headers: {
       Authorization: `Bearer ${apiKey.trim().replace(/^["']|["']$/g, '')}`,
       'Content-Type': 'application/json',
@@ -39,11 +73,24 @@ async function callOpenRouter(apiKey: string, messages: any[]) {
       temperature: 0,
     }),
   });
+
+  clearTimeout(timeout);
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.error?.message || 'API request failed');
+    const rawError = await response.text().catch(() => '');
+    let parsedError: any = {};
+
+    try {
+      parsedError = rawError ? JSON.parse(rawError) : {};
+    } catch {
+      parsedError = { error: { message: rawError } };
+    }
+
+    throw new Error(parsedError.error?.message || `OpenRouter request failed with status ${response.status}`);
   }
-  return response.json();
+
+  const rawPayload = await response.text();
+  return rawPayload ? JSON.parse(rawPayload) : {};
 }
 
 function normalizeResumeDraft(draft: string) {
@@ -78,18 +125,21 @@ export async function extractTextFromPDF(buffer: Buffer) {
 }
 
 // API Route for PDF parsing
-app.post('/api/parse-pdf', upload.single('file'), async (req, res) => {
+app.post('/api/parse-pdf', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'resume', maxCount: 1 }]), async (req, res) => {
   try {
-    if (!req.file) {
+    const files = req.files as Record<string, Express.Multer.File[]> | undefined;
+    const file = files?.file?.[0] || files?.resume?.[0];
+
+    if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    console.log("File received:", req.file.originalname);
+    console.log('File received:', file.originalname);
 
-    const buffer = req.file.buffer;
+    const buffer = file.buffer;
     const text = await extractTextFromPDF(buffer);
 
-    console.log("Extracted text length:", text?.length || 0);
+    console.log('Extracted text length:', text?.length || 0);
 
     if (!text || !text.trim()) {
       return res.status(400).json({ error: 'Extracted text is empty. The PDF might be an image or protected.' });
@@ -97,7 +147,7 @@ app.post('/api/parse-pdf', upload.single('file'), async (req, res) => {
 
     return res.json({ text });
   } catch (err: any) {
-    console.error("PDF Parse Error:", err);
+    console.error('PDF Parse Error:', err);
     return res.status(500).json({ 
       error: 'Failed to parse the PDF document', 
       details: err.message 
@@ -105,12 +155,45 @@ app.post('/api/parse-pdf', upload.single('file'), async (req, res) => {
   }
 });
 
+// Non-streaming analysis route for compatibility with older frontend flows.
+app.post('/api/analyze-resume', async (req, res) => {
+  try {
+    const { text } = req.body ?? {};
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'No API key' });
+    }
+
+    if (typeof text !== 'string' || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Resume text is required.' });
+    }
+
+    const payload = await callOpenRouter(apiKey, [
+      { role: 'system', content: 'Return valid JSON only.' },
+      { role: 'user', content: `Analyze this resume: ${text}` },
+    ]);
+
+    const parsed = extractJsonObject(payload?.choices?.[0]?.message?.content || '{}');
+    const tailored = await generateTailoredResumeDraft(apiKey, text, parsed);
+    parsed.tailoredResume = normalizeResumeDraft(tailored);
+
+    return res.json(parsed);
+  } catch (err: any) {
+    console.error('Analyze route error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to analyze resume.' });
+  }
+});
+
 // Streaming analysis route
 app.post('/api/analyze-resume-stream', async (req, res) => {
   try {
     const { text } = req.body;
-    let apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'No API key' });
+    if (typeof text !== 'string' || text.trim().length === 0) {
+      return res.status(400).json({ error: 'Resume text is required.' });
+    }
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -138,6 +221,20 @@ app.post('/api/analyze-resume-stream', async (req, res) => {
     res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
     res.end();
   }
+});
+
+app.use((error: any, req: any, res: any, _next: any) => {
+  const requestId = req?.requestId || 'unknown';
+  console.error(`Unhandled express error [${requestId}]:`, error);
+
+  if (res.headersSent) {
+    return;
+  }
+
+  res.status(500).json({
+    error: 'Internal server error',
+    requestId,
+  });
 });
 
 // Static files in production
