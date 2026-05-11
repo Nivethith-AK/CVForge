@@ -401,7 +401,7 @@ Please ensure all tests pass and code is properly formatted.
 
 ## 📞 Support
 
-- 📧 **Email**: support@example.com
+- 📧 **Email**: niknive7@gmail.com
 - 🐛 **Issues**: [GitHub Issues](https://github.com/Nivethith-AK/CVForge/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/Nivethith-AK/CVForge/discussions)
 
