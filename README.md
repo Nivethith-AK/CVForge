@@ -28,7 +28,7 @@
 Receive an instant, data-driven ATS match score (0-100) with live animated visualization. Our dual-layer normalization ensures consistent, accurate scores regardless of AI model variance.
 
 ### 🧠 **Semantic AI Analysis**
-Powered by **Google Gemini 2.0 via OpenRouter**, CVForge performs deep semantic resume analysis including:
+Powered by **Google Gemini 3.1 via OpenRouter**, CVForge performs deep semantic resume analysis including:
 - **Strengths & Weaknesses** - Identifies key selling points and improvement areas
 - **Skill Gap Detection** - Compares against industry benchmarks for target roles
 - **Executive Summary** - Generates role-specific professional narrative
